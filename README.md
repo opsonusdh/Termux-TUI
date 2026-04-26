@@ -33,7 +33,7 @@ No root. No X11. No display server. Just Python.
 - Safe large file handling — files over 50KB show only the first 100 lines
 - Up button + path jump — navigate up or type any absolute path to jump directly
 ## 🚀 Installation
-### Download File
+### Download Files
 ``` bash
 git clone https://github.com/opsonusdh/Termux-TUI.git
 cd Termux-TUI
