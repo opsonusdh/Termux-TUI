@@ -53,6 +53,7 @@ TermuxDash uses a custom Jarvis-inspired color palette:
 | Values             | bold green                 |
 | Background         | #0a0a0f (Near-black)       |
 | Borders            | double cyan / double green |
+
 The UI is built with Textual — a Python framework for building terminal apps with CSS-like styling.
 ## ⚠️ Disclaimer
 This tool is for personal use, learning, and ethical research only. Some included tools (Metasploit, Hydra, Aircrack-ng etc.) are powerful security tools — use them only on systems you own or have explicit permission to test.
