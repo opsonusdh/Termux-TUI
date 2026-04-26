@@ -45,7 +45,7 @@ pip install -r requirements.txt
 ```
 ### Run
 ``` bash
-python tui.py
+python app.py
 ```
 
 ## 🎨 Design
