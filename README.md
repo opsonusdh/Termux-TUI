@@ -1,6 +1,8 @@
 # TermuxDash 🖥️
 A futuristic, Jarvis-style terminal dashboard for Termux — built entirely in Python with no display server, no XFCE, no GUI required.
 
+![App Screenshot](assets/screenshot.png)
+
 ## 🧠 What is this?
 Most Termux users spend more time remembering commands than actually doing things. TermuxDash replaces that friction with a fully interactive terminal UI — live system stats, one-tap package installs, a clickable file browser, and direct access to all Termux API commands — all in a single Python script that runs inside the Termux terminal itself.
 No root. No X11. No display server. Just Python.
