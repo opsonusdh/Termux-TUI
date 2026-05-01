@@ -32,6 +32,8 @@ TOOLS = [
               "chmod +x $PREFIX/bin/apktool"]},
     {"id":"metasploit","name":"Metasploit",      "desc":"Full penetration testing framework",  "cat":"Exploitation",
      "steps":["pkg install unstable-repo -y","pkg install metasploit -y"]},
+    {"id":"termux-app-store","name":"Termux-App-Store","desc":"The first offline-first, source-based TUI package manager built natively for Termux.",   "cat":"Package manager",
+     "steps":["pip install termux-app-store"]},
     {"id":"nmap",      "name":"Nmap",            "desc":"Network scanner & port mapper",       "cat":"Recon",
      "steps":["pkg install nmap -y"]},
     {"id":"sqlmap",    "name":"SQLMap",          "desc":"Automatic SQL injection tool",        "cat":"Exploitation",
@@ -83,6 +85,7 @@ CAT_STYLE = {
     "Dev":          "bold bright_blue",
     "Wireless":     "bold orange1",
     "Networking":   "bold bright_cyan",
+    "Package Manager": "bold green",
 }
 
 SYSTEM_CMDS = [
