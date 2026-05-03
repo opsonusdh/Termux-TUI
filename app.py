@@ -6,20 +6,18 @@ from textual.widgets import (
 )
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual import work
+from textual.command import Provider, Hit, Hits, DiscoveryHit
+from functools import partial
 from rich.text import Text
 import subprocess, os, re, time, json
 from datetime import datetime
-from utils.constants import SPLASH, BASIC_COMMANDS, TOOLS, CAT_STYLE, SYSTEM_CMDS, ICONS
+from utils.constants import SPLASH, BASIC_COMMANDS, TOOLS, CAT_STYLE, SYSTEM_CMDS, ICONS, CSS_SPLASH_SCREEN, CSS_MAIN
 from utils.helpers import strip_ansi, get_recent_programs, get_battery, get_memory, run_speedtest, fmt_speed, flatten_json, fmt_size
 
 # SPLASH SCREEN
 
 class SplashScreen(Screen):
-    CSS = """
-    SplashScreen  { align: center middle; background: #0a0a0f; }
-    #splash-art   { color: #00ffff; text-align: center; }
-    #splash-sub   { color: #00ff41; text-align: center; margin-top: 1; }
-    """
+    CSS = CSS_SPLASH_SCREEN
 
     def compose(self) -> ComposeResult:
         yield Static(SPLASH,                      id="splash-art")
@@ -36,9 +34,41 @@ class SplashScreen(Screen):
         time.sleep(2.5)
         self.app.call_from_thread(self.dismiss)
 
+
+# Theme colour
+class ThemeCommand(Provider):
+    _themes = [
+        ("Theme: Jarvis", "jarvis"),
+        ("Theme: Dark", "dark"),
+        ("Theme: Light", "light"),
+    ]
+
+    async def discover(self) -> Hits:
+        """Shown when palette opens with no query."""
+        for label, key in self._themes:
+            yield DiscoveryHit(
+                display=label,
+                command=partial(self.app.set_theme, key),
+                help="Switch colour palette",
+            )
+
+    async def search(self, query: str) -> Hits:
+        """Shown when user types."""
+        for label, key in self._themes:
+            if query.lower() in label.lower():
+                yield Hit(
+                    score=1.0,
+                    match_display=label,
+                    command=partial(self.app.set_theme, key),
+                    text=label,
+                    help="Switch colour palette",
+                )
+
+
 # MAIN APP
 
 class TermuxDashboard(App):
+    COMMANDS = App.COMMANDS | {ThemeCommand}
     _tick_count   = 0
     _cached_batt  = "..."
     _cached_mem   = "..."
@@ -49,70 +79,14 @@ class TermuxDashboard(App):
     _nav_gen = 0
     _current_path = os.path.expanduser("~")
 
-    CSS = """
-    Screen { background: #0a0a0f; }
-
-    /* ── HOME ── */
-    #info-row          { height: 18; }
-    #sys-info-box      { width: 1fr; border: double cyan; align: center middle; background: #050510; }
-    #sys-info-box.alert{ border: double red; }
-    #sys-info          { text-align: center; color: #00ffff; }
-    #weather           { width: 1fr; border: double #00ff41; padding: 1; height: 100%; background: #050510; color: #00ff41; }
-    #recent            { height: 7; border: tall #1a1a2e; padding: 1; background: #050510; }
-    .recent-btn        { margin: 0 1; background: #0d0d1a; color: #00ffff; border: tall #00ffff; }
-    .recent-btn:hover  { background: #00ffff; color: #000000; }
-    #action-row        { height: 5; }
-    #update-btn        { width: 1fr; background: #003300; color: #00ff41; border: tall #00ff41; }
-    #update-btn:hover  { background: #00ff41; color: #000000; }
-    #install-btn       { width: 1fr; background: #00001a; color: #00ffff; border: tall #00ffff; }
-    #install-btn:hover { background: #00ffff; color: #000000; }
-    #pkg-input         { display: none; }
-    #cmd-input         { margin-top: 1; background: #050510; color: #00ff41; border: tall #333355; }
-    #log-view          { border: double #1a1a3e; background: #020208; color: #00ff41; height: 1fr; }
-
-    /* ── PACKAGES ── */
-    #pkg-scroll        { height: 1fr; background: #050510; }
-    .tool-card         { height: 7; border: solid #1a1a3e; margin: 0 0 1 0; padding: 0 1; background: #050510; }
-    .tool-card:hover   { border: solid #00ffff; background: #080818; }
-    .tool-info         { width: 1fr; }
-    .tool-name         { color: #00ffff; }
-    .tool-desc         { color: #444466; }
-    .install-btn       { width: 14; background: #001a00; color: #00ff41; border: tall #00ff41; margin: 1 0; }
-    .install-btn:hover { background: #00ff41; color: #000000; }
-    #pkg-log           { height: 14; border: double #1a1a3e; background: #020208; }
-
-    /* ── SYSTEM ── */
-    #sys-scroll        { height: 1fr; }
-    .sys-row           { height: 5; }
-    .sys-btn           { width: 1fr; margin: 0 1 1 0; background: #0d0d1a; color: #00ffff; border: tall #1a1a3e; }
-    .sys-btn:hover     { background: #00ffff; color: #000000; }
-    #sys-log           { height: 14; border: double #1a1a3e; background: #020208; }
-
-    /* ── FILES ── */
-    #file-nav          { height: 3; }
-    #file-up-btn       { width: 10; background: #0d0d1a; color: #00ffff; border: tall #00ffff; }
-    #file-path-display { width: 1fr; color: #444466; padding: 1; }
-    #file-scroll      { border: double #1a1a3e; background: #020208; height: 1fr; content-align: right middle; }
-    .file-dir-btn  { width: 100%; background: #020208; color: #00ffff; border: none; align-horizontal: left; height: 1; margin: 0; padding: 0 2; }
-    .file-file-btn { width: 100%; background: #020208; color: #00ff41; border: none; align-horizontal: left; height: 1; margin: 0; padding: 0 2; }
-    .file-dir-btn:hover  { background: #0a0a2f; }
-    .file-file-btn:hover { background: #0a1a0a; }
-    .file-footer      { color: #444466; width: 100%; height: 1; }
-    #file-input        { background: #050510; color: #00ff41; border: tall #333355; }
-
-    /* ── GLOBAL ── */
-    Header          { background: #000020; color: #00ffff; }
-    Footer          { background: #000020; color: #333355; }
-    TabbedContent   { background: #0a0a0f; }
-    Tab             { color: #333366; }
-    Tab.-active     { color: #00ffff; background: #000020; }
-    """
+    CSS = CSS_MAIN
+   
 
     def compose(self) -> ComposeResult:
         yield Header()
         with TabbedContent():
 
-            # ── HOME ──────────────────────────────────────────────
+            # HOME
             with TabPane("🏠 Home"):
                 with Vertical():
                     with Horizontal(id="info-row"):
@@ -129,7 +103,7 @@ class TermuxDashboard(App):
                     yield Input(placeholder="$ Enter any command...",   id="cmd-input")
                     yield Log(id="log-view")
 
-            # ── PACKAGES ──────────────────────────────────────────
+            # PACKAGES 
             with TabPane("📦 Packages"):
                 with Vertical():
                     with VerticalScroll(id="pkg-scroll"):
@@ -146,7 +120,7 @@ class TermuxDashboard(App):
                                 yield Button("▸ INSTALL", id=f"tool-{tool['id']}", classes="install-btn")
                     yield RichLog(id="pkg-log", markup=True)
 
-            # ── SYSTEM ────────────────────────────────────────────
+            # SYSTEM
             with TabPane("⚙ System"):
                 with Vertical():
                     with VerticalScroll(id="sys-scroll"):
@@ -157,7 +131,7 @@ class TermuxDashboard(App):
                                     yield Button(cmd['name'], id=f"syscmd-{cmd['id']}", classes="sys-btn")
                     yield RichLog(id="sys-log", markup=True)
 
-            # ── FILES ─────────────────────────────────────────────
+            # FILES
             with TabPane("📁 Files"):
                 with Vertical():
                     with Horizontal(id="file-nav"):
@@ -172,15 +146,21 @@ class TermuxDashboard(App):
 
         yield Footer()
 
-    # ─────────────────── MOUNT ───────────────────────────────────
+    # MOUNT
 
     def on_mount(self):
         self.push_screen(SplashScreen())
         self.fetch_weather()
         self.set_interval(1, self.tick_sysinfo)
         self.list_directory(self._current_path)
+    
+    def set_theme(self, key: str):
+        for k in ["dark", "light"]:
+            self.remove_class(f"theme-{k}")
+        if key != "jarvis":
+            self.add_class(f"theme-{key}")
 
-    # ─────────────────── SYSINFO TICK ────────────────────────────
+    # SYSINFO TICK
 
     @work(thread=True)
     def tick_sysinfo(self):
@@ -201,7 +181,7 @@ class TermuxDashboard(App):
         )
         self.call_from_thread(self.query_one("#sys-info", Static).update, text)
 
-        # ── alert pulse when battery < 20% ──────────────────────
+        # alert pulse when battery < 20%
         try:
             pct = int(self._cached_batt.split('%')[0].strip())
             temp = float(self._cached_batt.split('°C')[0].split("🔥")[1].strip()) if "🔥" in self._cached_batt else 0
@@ -217,7 +197,7 @@ class TermuxDashboard(App):
         except:
             pass
 
-    # ─────────────────── WEATHER ─────────────────────────────────
+    # WEATHER
 
     @work(thread=True)
     def fetch_weather(self):
@@ -231,7 +211,7 @@ class TermuxDashboard(App):
             weather = "Weather unavailable"
         self.call_from_thread(self.query_one("#weather", Static).update, weather)
 
-    # ─────────────────── FILE BROWSER ────────────────────────────
+    # FILE BROWSER
 
     @work(thread=True)
     def list_directory(self, path):
@@ -330,7 +310,7 @@ class TermuxDashboard(App):
         except Exception as e:
             w(f"✗ {e}", "bold red")
 
-    # ─────────────────── BUTTON HANDLER ──────────────────────────
+    # BUTTON HANDLER
 
     def on_button_pressed(self, event: Button.Pressed):
         bid = str(event.button.id)
@@ -364,7 +344,7 @@ class TermuxDashboard(App):
             elif target and os.path.isfile(target):
                 self.open_file(target)
 
-    # ─────────────────── INPUT HANDLER ───────────────────────────
+    # INPUT HANDLER
 
     def on_input_submitted(self, event: Input.Submitted):
         val = event.value.strip()
@@ -399,7 +379,7 @@ class TermuxDashboard(App):
                 rlog.write(Text(f"✗ Not found: {target}", "bold red"))
             event.input.clear()
 
-    # ─────────────────── WORKERS ─────────────────────────────────
+    # WORKERS
 
     @work(thread=True)
     def run_home_cmd(self, cmd, msg):
@@ -457,7 +437,7 @@ class TermuxDashboard(App):
         w_header(cfg['name'])
         self.call_from_thread(rlog.write, Text("─" * 40, "dim #1a1a3e"))
 
-        # ── special: speedtest ───────────────────────────────────
+        # special: speedtest
         if cfg.get('special') == 'speedtest':
             w_raw("⏳ Running speedtest, please wait (~30s)...")
             result = run_speedtest()

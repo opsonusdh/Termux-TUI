@@ -32,6 +32,11 @@ No root. No X11. No display server. Just Python.
 - File size display — next to every file entry
 - Safe large file handling — files over 50KB show only the first 100 lines
 - Up button + path jump — navigate up or type any absolute path to jump directly
+### 📝 Also
+- 3 main Theme
+- Combined with 19 system themes
+- 57 possible themes to try
+
 ## 🚀 Installation
 ### Download Files
 ``` bash
