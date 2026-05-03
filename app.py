@@ -10,7 +10,7 @@ from rich.text import Text
 import subprocess, os, re, time, json
 from datetime import datetime
 from utils.constants import SPLASH, BASIC_COMMANDS, TOOLS, CAT_STYLE, SYSTEM_CMDS, ICONS
-from utils.helpers import strip_ansi, get_recent_programs, get_battery, get_memory, run_speedtest, fmt_speed, flatten_json
+from utils.helpers import strip_ansi, get_recent_programs, get_battery, get_memory, run_speedtest, fmt_speed, flatten_json, fmt_size
 
 # SPLASH SCREEN
 
@@ -386,7 +386,16 @@ class TermuxDashboard(App):
             elif os.path.isfile(target):
                 self.open_file(target)
             else:
-                rlog = self.query_one("#file-log", RichLog)
+                # show error in file-view-log if open, otherwise mount a temporary one
+                try:
+                    rlog = self.query_one("#file-view-log", RichLog)
+                except Exception:
+                    scroll = self.query_one("#file-scroll", VerticalScroll)
+                    scroll.remove_children()
+                    rlog = RichLog(markup=True, id="file-view-log")
+                    scroll.mount(rlog)
+                    back = Button("⬆ Back to folder", id="file-back-btn", classes="file-dir-btn")
+                    scroll.mount(back)
                 rlog.write(Text(f"✗ Not found: {target}", "bold red"))
             event.input.clear()
 
@@ -447,6 +456,15 @@ class TermuxDashboard(App):
 
         w_header(cfg['name'])
         self.call_from_thread(rlog.write, Text("─" * 40, "dim #1a1a3e"))
+
+        # ── special: speedtest ───────────────────────────────────
+        if cfg.get('special') == 'speedtest':
+            w_raw("⏳ Running speedtest, please wait (~30s)...")
+            result = run_speedtest()
+            for key, val in result.items():
+                w_kv(key, val)
+            return
+
         try:
             r = subprocess.run(
                 cfg['cmd'], shell=True, capture_output=True, text=True, timeout=15
