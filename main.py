@@ -4,7 +4,7 @@ from textual.widgets import (
     Header, Footer, Button, Static, RichLog, Log,
     TabbedContent, TabPane, Input
 )
-from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.containers import Horizontal, Vertical, VerticalScroll, Grid
 from textual import work
 from textual.command import Provider, Hit, Hits, DiscoveryHit
 from functools import partial
@@ -12,15 +12,19 @@ from rich.text import Text
 import subprocess, os, re, time, json
 from datetime import datetime
 from utils.constants import SPLASH, BASIC_COMMANDS, TOOLS, CAT_STYLE, SYSTEM_CMDS, ICONS, CSS_SPLASH_SCREEN, CSS_MAIN
-from utils.helpers import strip_ansi, get_recent_programs, get_battery, get_memory, run_speedtest, fmt_speed, flatten_json, fmt_size
+from utils.helpers import strip_ansi, get_recent_programs, get_battery, get_memory, run_speedtest, fmt_speed, flatten_json, fmt_size, load_config, save_config
+from utils.apps import MusicPlayerScreen, FileBrowserScreen
 
+# Loading Config
+config = load_config()
+    
+    
 # SPLASH SCREEN
-
 class SplashScreen(Screen):
     CSS = CSS_SPLASH_SCREEN
 
     def compose(self) -> ComposeResult:
-        yield Static(SPLASH,                      id="splash-art")
+        yield Static(SPLASH,  id="splash-art")
         yield Static("[ PRESS ANY KEY TO SKIP ]", id="splash-sub")
 
     def on_mount(self):
@@ -65,8 +69,9 @@ class ThemeCommand(Provider):
                 )
 
 
-# MAIN APP
 
+
+# MAIN APP
 class TermuxDashboard(App):
     COMMANDS = App.COMMANDS | {ThemeCommand}
     _tick_count   = 0
@@ -75,9 +80,6 @@ class TermuxDashboard(App):
     _net_rx_prev  = 0
     _net_tx_prev  = 0
     _alert_blink  = False
-    _file_entries = {} # index → full path
-    _nav_gen = 0
-    _current_path = os.path.expanduser("~")
 
     CSS = CSS_MAIN
    
@@ -131,34 +133,31 @@ class TermuxDashboard(App):
                                     yield Button(cmd['name'], id=f"syscmd-{cmd['id']}", classes="sys-btn")
                     yield RichLog(id="sys-log", markup=True)
 
-            # FILES
-            with TabPane("📁 Files"):
-                with Vertical():
-                    with Horizontal(id="file-nav"):
-                        yield Button("⬆ Up", id="file-up-btn")
-                        yield Static(self._current_path, id="file-path-display")
-                    with VerticalScroll(id="file-scroll"):
-                        yield Static("Loading...", id="file-placeholder")
-                    yield Input(
-                        placeholder="📁 type path + Enter to jump anywhere...",
-                        id="file-input"
-                    )
+                    
+            # APPS
+            with TabPane("🎮 Apps"):
+                with Grid(id="apps-grid"):
+                    yield Button("📁 File Browser", id="app-files", classes="apps")
+                    yield Button("🎵 Music Player", id="app-music", classes="apps")
+                        
 
         yield Footer()
 
     # MOUNT
-
     def on_mount(self):
         self.push_screen(SplashScreen())
         self.fetch_weather()
         self.set_interval(1, self.tick_sysinfo)
-        self.list_directory(self._current_path)
+        self.set_theme(config.get("theme", "jarvis"))
     
     def set_theme(self, key: str):
         for k in ["dark", "light"]:
             self.remove_class(f"theme-{k}")
         if key != "jarvis":
             self.add_class(f"theme-{key}")
+            
+        config["theme"] = key
+        save_config(config)
 
     # SYSINFO TICK
 
@@ -182,8 +181,8 @@ class TermuxDashboard(App):
         self.call_from_thread(self.query_one("#sys-info", Static).update, text)
 
         # alert pulse when battery < 20%
-        try:
-            pct = int(self._cached_batt.split('%')[0].strip())
+        if self._tick_count % 5 == 0:
+            pct = int(self._cached_batt.split('%')[0].strip()) if "%" in self._cached_batt else 100 
             temp = float(self._cached_batt.split('°C')[0].split("🔥")[1].strip()) if "🔥" in self._cached_batt else 0
             box = self.query_one("#sys-info-box")
             if pct < 20 or temp >= 40:
@@ -194,11 +193,9 @@ class TermuxDashboard(App):
                     self.call_from_thread(box.remove_class, "alert")
             else:
                 self.call_from_thread(box.remove_class, "alert")
-        except:
-            pass
+        
 
     # WEATHER
-
     @work(thread=True)
     def fetch_weather(self):
         try:
@@ -211,107 +208,8 @@ class TermuxDashboard(App):
             weather = "Weather unavailable"
         self.call_from_thread(self.query_one("#weather", Static).update, weather)
 
-    # FILE BROWSER
-
-    @work(thread=True)
-    def list_directory(self, path):
-        self._nav_gen += 1
-        gen = self._nav_gen
-
-
-        self.call_from_thread(
-            self.query_one("#file-path-display", Static).update,
-            f"  📁 {path}"
-        )
-
-        try:
-            entries = sorted(os.listdir(path))
-        except PermissionError:
-            entries = []
-
-        dirs  = [e for e in entries if os.path.isdir(os.path.join(path, e))]
-        files = [e for e in entries if not os.path.isdir(os.path.join(path, e))]
-
-        # Build entries map before going to main thread
-        file_entries = {}
-        idx = 0
-        for d in dirs:
-            file_entries[idx] = os.path.join(path, d)
-            idx += 1
-        for f in files:
-            file_entries[idx] = os.path.join(path, f)
-            idx += 1
-
-        def rebuild():
-            self._file_entries = file_entries
-            scroll = self.query_one("#file-scroll", VerticalScroll)
-            scroll.remove_children()
-
-            i = 0
-            for d in dirs:
-                scroll.mount(Button(
-                    f"  📁  {d}/",
-                    id=f"fentry-{gen}-{i}",
-                    classes="file-dir-btn"
-                ))
-                i += 1
-
-            for f in files:
-                try:   size = fmt_size(os.path.getsize(os.path.join(path, f)))
-                except: size = "?"
-                ext  = f.split(".")[-1].lower() if "." in f else ""
-                icon = ICONS.get(ext, "📄")
-                scroll.mount(Button(
-                    f"  {icon}  {f}  [{size}]",
-                    id=f"fentry-{gen}-{i}",
-                    classes="file-file-btn"
-                ))
-                i += 1
-
-            scroll.mount(Static(
-                f"  {len(dirs)} dirs   {len(files)} files",
-                classes="file-footer"
-            ))
-
-        self.call_from_thread(rebuild)
-
-    @work(thread=True)
-    def open_file(self, path):
-        scroll = self.query_one("#file-scroll", VerticalScroll)
-
-        def show():
-            scroll.remove_children()
-            rlog = RichLog(markup=True, id="file-view-log")
-            scroll.mount(rlog)
-            back = Button("⬆ Back to folder", id="file-back-btn", classes="file-dir-btn")
-            scroll.mount(back)
-
-        self.call_from_thread(show)
-        time.sleep(0.1)  # let mount settle
-
-        rlog = self.query_one("#file-view-log", RichLog)
-
-        def w(text, style=""):
-            self.call_from_thread(rlog.write, Text(text, style) if style else Text(text))
-
-        w(f"◈ {path}", "bold cyan")
-        w("─" * 42, "dim #1a1a3e")
-        try:
-            size = os.path.getsize(path)
-            if size > 50000:
-                w(f"⚠ Large file ({fmt_size(size)}) — first 100 lines", "bold yellow")
-                r = subprocess.run(['head','-100', path], capture_output=True, text=True)
-                for line in r.stdout.splitlines():
-                    w(f"  {line}", "dim green")
-            else:
-                with open(path, 'r', errors='replace') as f:
-                    for line in f.readlines()[:300]:
-                        w(f"  {line.rstrip()}", "dim green")
-        except Exception as e:
-            w(f"✗ {e}", "bold red")
-
+    
     # BUTTON HANDLER
-
     def on_button_pressed(self, event: Button.Pressed):
         bid = str(event.button.id)
 
@@ -328,24 +226,13 @@ class TermuxDashboard(App):
         elif bid.startswith("syscmd-"):
             cfg = next((c for c in SYSTEM_CMDS if c['id'] == bid[7:]), None)
             if cfg: self.run_sys_cmd(cfg)
-        elif bid == "file-up-btn":
-            parent = os.path.dirname(self._current_path)
-            self._current_path = parent
-            self.list_directory(parent)
-        elif bid == "file-back-btn":
-            self.list_directory(self._current_path)
+        elif bid == "app-music":
+            self.push_screen(MusicPlayerScreen())
+        elif bid == "app-files":
+            self.app.push_screen(FileBrowserScreen())
 
-        elif bid.startswith("fentry-"):
-            idx = int(bid.split("-")[-1])  # always last segment
-            target = self._file_entries.get(idx)
-            if target and os.path.isdir(target):
-                self._current_path = target
-                self.list_directory(target)
-            elif target and os.path.isfile(target):
-                self.open_file(target)
 
     # INPUT HANDLER
-
     def on_input_submitted(self, event: Input.Submitted):
         val = event.value.strip()
         if not val: return
@@ -357,30 +244,8 @@ class TermuxDashboard(App):
         elif event.input.id == "cmd-input":
             self.run_home_shell(val); event.input.clear()
 
-        elif event.input.id == "file-input":
-            target = val if os.path.isabs(val) else os.path.join(self._current_path, val)
-            target = os.path.normpath(target)
-            if os.path.isdir(target):
-                self._current_path = target
-                self.list_directory(target)
-            elif os.path.isfile(target):
-                self.open_file(target)
-            else:
-                # show error in file-view-log if open, otherwise mount a temporary one
-                try:
-                    rlog = self.query_one("#file-view-log", RichLog)
-                except Exception:
-                    scroll = self.query_one("#file-scroll", VerticalScroll)
-                    scroll.remove_children()
-                    rlog = RichLog(markup=True, id="file-view-log")
-                    scroll.mount(rlog)
-                    back = Button("⬆ Back to folder", id="file-back-btn", classes="file-dir-btn")
-                    scroll.mount(back)
-                rlog.write(Text(f"✗ Not found: {target}", "bold red"))
-            event.input.clear()
-
+        
     # WORKERS
-
     @work(thread=True)
     def run_home_cmd(self, cmd, msg):
         log = self.query_one("#log-view", Log)
@@ -454,6 +319,7 @@ class TermuxDashboard(App):
                 try:
                     for key, val in flatten_json(json.loads(out)):
                         w_kv(key, val)
+                    
                 except json.JSONDecodeError:
                     for line in out.splitlines(): w_raw(line)
             else:

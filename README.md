@@ -50,7 +50,7 @@ pip install -r requirements.txt
 ```
 ### Run
 ``` bash
-python app.py
+python main.py
 ```
 
 ## 🎨 Design

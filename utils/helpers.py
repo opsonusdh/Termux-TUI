@@ -1,5 +1,5 @@
 import os, re, subprocess, json
-from .constants import BASIC_COMMANDS
+from .constants import BASIC_COMMANDS, MUSIC_EXTENSIONS, DEFAULT_MUSIC_DIRS, CONFIG_PATH
 
 def strip_ansi(text):
     return re.sub(r'\x1b\[[0-9;]*m', '', text)
@@ -93,8 +93,71 @@ def flatten_json(data, prefix=""):
             if isinstance(v, (dict, list)): out.extend(flatten_json(v, key))
             else: out.append((key, str(v)))
     elif isinstance(data, list):
+        prev_i = 0
         for i, item in enumerate(data):
             key = f"{prefix}[{i}]"
             if isinstance(item, (dict, list)): out.extend(flatten_json(item, key))
             else: out.append((key, str(item)))
     return out
+    
+def load_config():
+    try:
+        with open(CONFIG_PATH) as f:
+            return json.load(f)
+    except Exception:
+        return {"theme": "jarvis", "music_dirs": DEFAULT_MUSIC_DIRS, "music_mode": "sequential", "music_stop_on_close": False}
+
+
+def save_config(cfg):
+    try:
+        with open(CONFIG_PATH, 'w') as f:
+            json.dump(cfg, f, indent=2)
+    except Exception:
+        pass
+
+
+def scan_music(dirs):
+    songs, seen = [], set()
+    for d in dirs:
+        try:
+            with os.scandir(d) as it:
+                for e in sorted(it, key=lambda x: x.name.lower()):
+                    if e.is_file() and e.path not in seen and \
+                       any(e.name.lower().endswith(x) for x in MUSIC_EXTENSIONS):
+                        seen.add(e.path)
+                        songs.append(e.path)
+        except Exception:
+            pass
+    return songs
+
+
+def mp_run(*args):
+    try:
+        r = subprocess.run(['termux-media-player', *args],
+                           capture_output=True, text=True, timeout=5)
+        return r.stdout.strip()
+    except Exception:
+        return ""
+
+
+def mp_info():
+    out = mp_run('info')
+    result = {}
+    for line in out.splitlines():
+        if line.startswith("Status:"):
+            result['status'] = line.split(":", 1)[1].strip().lower()
+        elif line.startswith("Track:"):
+            result['track'] = line.split(":", 1)[1].strip()
+        elif line.startswith("Current Position:"):
+            times = line.split(":", 1)[1].strip().split("/")
+            if len(times) == 2:
+                def to_sec(t):
+                    p = t.strip().split(":")
+                    return int(p[0]) * 60 + int(p[1]) if len(p) == 2 else 0
+                result['position'] = to_sec(times[0])
+                result['duration'] = to_sec(times[1])
+    return result
+    
+def to_mmss(sec):
+    sec = max(0, int(sec))
+    return f"{sec // 60}:{sec % 60:02d}"
