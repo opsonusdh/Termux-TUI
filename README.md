@@ -26,12 +26,11 @@ No root. No X11. No display server. Just Python.
 - JSON auto-parsing — API responses are displayed as pink KEY ▸ green VALUE pairs instead of raw JSON
 - Scrollable grid — add as many commands as you want without overflow
 - Speedtest — runs speedtest-cli and displays Download/Upload/Ping/Server as parsed key-value pairs
-### 📁 Files Tab
-- Clickable file browser — tap any folder to navigate in, tap any file to view its contents
-- File type icons — Python 🐍, Markdown 📝, APK 🤖, audio 🎵, video 🎬, archives 📦 and more
-- File size display — next to every file entry
-- Safe large file handling — files over 50KB show only the first 100 lines
-- Up button + path jump — navigate up or type any absolute path to jump directly
+### 🎮 Apps Tab
+- 2 apps added.
+- Music player
+- File manager
+
 ### 📝 Also
 - 3 main Theme
 - Combined with 19 system themes
