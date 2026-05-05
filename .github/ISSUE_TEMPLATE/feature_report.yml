@@ -1,0 +1,83 @@
+name: ✨ Feature Request
+description: Suggest a new idea or improvement for Termux-TUI
+title: "[FEAT] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Got an idea? We'd love to hear it. Fill in the details below and we'll take a look.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is Your Feature Request Related to a Problem?
+      description: A clear description of the problem you're trying to solve.
+      placeholder: "I'm always frustrated when I have to leave the app to do X..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the Solution You'd Like
+      description: What do you want to happen? Be as specific as possible.
+      placeholder: "Add a search bar in the Packages tab that filters tools in real-time..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tab
+    attributes:
+      label: Which Tab Would This Affect?
+      options:
+        - Home
+        - Packages
+        - System
+        - Files
+        - New tab
+        - Global / all tabs
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type of Feature
+      options:
+        - New tool in Packages tab
+        - New system command in System tab
+        - UI / UX improvement
+        - Performance improvement
+        - New tab or major feature
+        - Developer / contributor tooling
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any other approaches you've thought about?
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Mockups, screenshots, links, or any other relevant information.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues and this has not been requested before
+          required: true
+        - label: I am willing to help implement this feature
+          required: false

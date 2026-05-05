@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: 💬 Ask a Question / Start a Discussion
+    url: https://github.com/opsonusdh/Termux-TUI/discussions
+    about: For general questions, ideas, and community chat — please use Discussions instead of Issues.
+
+  - name: 📖 Read the Contributing Guide
+    url: https://github.com/opsonusdh/Termux-TUI/blob/main/CONTRIBUTING.md
+    about: Learn how to add tools, system commands, and submit Pull Requests.
+
+  - name: 🔒 Report a Security Vulnerability
+    url: https://github.com/opsonusdh/Termux-TUI/security/advisories/new
+    about: Please report security issues privately — do not open a public issue.
