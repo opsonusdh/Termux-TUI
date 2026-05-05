@@ -4,14 +4,10 @@ from textual.widgets import Button, Static, Input, Switch, RichLog
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual import work
 from rich.text import Text
-import subprocess, os, random
+import subprocess, os, random, time
 
 from utils.constants import CONFIG_PATH, ICONS, DEFAULT_MUSIC_DIRS, MUSIC_EXTENSIONS, MUSIC_PLAYER_SETTING_CSS, MUSIC_PLAYER_CSS, FILE_EXPLORER_CSS
 from utils.helpers import load_config, save_config, scan_music, mp_run, mp_info, to_mmss, fmt_size 
-
-# CONFIG
-
-config = load_config()
 
 
 # MUSIC SETTINGS SCREEN
@@ -21,8 +17,9 @@ class MusicPlayerSettingsScreen(Screen):
 
     def __init__(self, config, on_save):
         super().__init__()
-        self._config  = config
+        self._config  = load_config()
         self._on_save = on_save
+        
         self._selected_dir = None
 
     def compose(self) -> ComposeResult:
@@ -53,20 +50,10 @@ class MusicPlayerSettingsScreen(Screen):
                 yield Static("Stop music when closing player", id="set-stop-label")
                 yield Switch(value=self._config.get("music_stop_on_close", True),
                              id="set-stop-switch")
-
+    
     def on_mount(self):
-        theme = config.get("theme", "jarvis")
-
-        # remove old theme classes
-        self.remove_class("theme-dark")
-        self.remove_class("theme-light")
-
-        # apply new one
-        if theme == "dark":
-            self.add_class("theme-dark")
-        elif theme == "light":
-            self.add_class("theme-light")
-        
+        self.app.set_theme(self._config.get("theme", "jarvis"))
+            
     def on_button_pressed(self, event: Button.Pressed):
         bid = str(event.button.id)
         if bid == "set-close":
@@ -74,8 +61,27 @@ class MusicPlayerSettingsScreen(Screen):
             self.dismiss()
         elif bid == "set-add-dir":
             inp = self.query_one("#set-dir-input", Input)
-            inp.display = True
-            inp.focus()
+            if inp.display and inp.value.strip():
+                # input is visible and has text — treat as submit
+                path = inp.value.strip()
+                if path not in self._config['music_dirs']:
+                    self._config['music_dirs'].append(path)
+                    scroll = self.query_one("#set-scroll", VerticalScroll)
+                    scroll.mount(
+                        Button(f"  📁 {path}", classes="set-dir-btn",
+                               id=f"setdir-{abs(hash(path))}"),
+                        before=self.query_one("#add-or-delete")
+                    )
+                inp.clear()
+                inp.display = False
+                event.button.label = "+ Add"
+            else:
+                # input is hidden or empty — show it
+                inp.display = True
+                inp.focus()
+                # also change button label to hint
+                event.button.label = "✓ Confirm"
+                
         elif bid.startswith("setmode-"):
             mode = bid[8:]
             self._config['music_mode'] = mode
@@ -123,12 +129,16 @@ class MusicPlayerSettingsScreen(Screen):
             self._config['music_dirs'].append(path)
             scroll = self.query_one("#set-scroll", VerticalScroll)
             scroll.mount(
-                Button(f" 📁 {path}", classes="set-dir-btn",
+                Button(f"  📁 {path}", classes="set-dir-btn",
                        id=f"setdir-{abs(hash(path))}"),
-                before=self.query_one("#set-add-dir")
+                before=self.query_one("#add-or-delete")
             )
         event.input.clear()
         event.input.display = False
+        try:
+            self.query_one("#set-add-dir", Button).label = "+ Add Folder"
+        except Exception:
+            pass
 
     def on_switch_changed(self, event: Switch.Changed):
         if event.switch.id == "set-stop-switch":
@@ -148,10 +158,12 @@ class MusicPlayerScreen(Screen):
     _poll_counter = 0
     _nav_gen      = 0
     _config       = {}
+    
 
     def __init__(self):
         super().__init__()
         self._config = load_config()
+        
 
     def compose(self) -> ComposeResult:
         # Search bar
@@ -184,18 +196,10 @@ class MusicPlayerScreen(Screen):
     def on_mount(self):
         self.scan_and_load()
         self.set_interval(1, self.tick)
+        self.app.set_theme(self._config.get("theme", "jarvis"))
         
-        theme = config.get("theme", "jarvis")
-
-        # remove old theme classes
-        self.remove_class("theme-dark")
-        self.remove_class("theme-light")
-
-        # apply new one
-        if theme == "dark":
-            self.add_class("theme-dark")
-        elif theme == "light":
-            self.add_class("theme-light")
+        
+        
 
     # scanning
 
@@ -419,6 +423,7 @@ class FileBrowserScreen(Screen):
     _file_entries = {}
     _nav_gen      = 0
     _current_path = os.path.expanduser("~")
+    _config = load_config()
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="file-header"):
@@ -434,6 +439,7 @@ class FileBrowserScreen(Screen):
 
     def on_mount(self):
         self.list_directory(self._current_path)
+        self.app.set_theme(self._config.get("theme", "jarvis"))
 
     @work(thread=True)
     def list_directory(self, path):
@@ -495,7 +501,7 @@ class FileBrowserScreen(Screen):
                 classes="file-dir-btn"
             ))
         self.app.call_from_thread(show)
-        import time; time.sleep(0.1)
+        time.sleep(0.1)
         rlog = self.query_one("#file-view-log", RichLog)
         def w(text, style=""):
             self.app.call_from_thread(

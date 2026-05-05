@@ -156,6 +156,12 @@ class TermuxDashboard(App):
         if key != "jarvis":
             self.add_class(f"theme-{key}")
             
+        for screen in self.screen_stack:
+            for k in ["dark", "light"]:
+                screen.remove_class(f"theme-{k}")
+            if key != "jarvis":
+                screen.add_class(f"theme-{key}")
+    
         config["theme"] = key
         save_config(config)
 

@@ -1,23 +1,34 @@
 import os
 
-VERSION = "2.2"
+VERSION = "2.2.1"
 
-SPLASH = (
-    "\n\n"
-    "  ╔══════════════════════════════════════╗\n"
-    "  ║                                      ║\n"
-    "  ║  ████████╗███████╗██████╗ ███╗       ║\n"
-    "  ║     ██╔══╝██╔════╝██╔══██╗████╗      ║\n"
-    "  ║     ██║   █████╗  ██████╔╝██╔██╗     ║\n"
-    "  ║     ██║   ██╔══╝  ██╔══██╗██║╚██╗    ║\n"
-    "  ║     ██║   ███████╗██║  ██║██║ ╚██╗   ║\n"
-    "  ║     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ║\n"
-    "  ║                                      ║\n"
-    f"  ║     ◈  TERMUX DASHBOARD  v{VERSION}  ◈     ║\n"
-    "  ║     ◈   INITIALIZING SYSTEMS   ◈     ║\n"
-    "  ║                                      ║\n"
-    "  ╚══════════════════════════════════════╝\n"
-)
+def _make_splash(version):
+    inner_width = 38
+    line = f"◈  TERMUX DASHBOARD  v{version}  ◈"
+    padding = inner_width - len(line)
+    left  = padding // 2
+    right = padding - left
+    version_line = f"  ║{' ' * left}{line}{' ' * right}║"
+
+    return (
+        "\n\n"
+        "  ╔══════════════════════════════════════╗\n"
+        "  ║                                      ║\n"
+        "  ║  ████████╗███████╗██████╗ ███╗       ║\n"
+        "  ║     ██╔══╝██╔════╝██╔══██╗████╗      ║\n"
+        "  ║     ██║   █████╗  ██████╔╝██╔██╗     ║\n"
+        "  ║     ██║   ██╔══╝  ██╔══██╗██║╚██╗    ║\n"
+        "  ║     ██║   ███████╗██║  ██║██║ ╚██╗   ║\n"
+        "  ║     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ║\n"
+        "  ║                                      ║\n"
+        f"{version_line}\n"
+        "  ║     ◈   INITIALIZING SYSTEMS   ◈     ║\n"
+        "  ║                                      ║\n"
+        "  ╚══════════════════════════════════════╝\n"
+    )
+
+SPLASH = _make_splash(VERSION)
+
 
 # CONSTANTS
 
@@ -297,43 +308,44 @@ SettingsScreen          { background: #0a0a0f; }
     
 
 /* DARK theme */
-.theme-dark MusicPlayerSettingsScreen { background: #111116; }
-.theme-dark #set-header        { background: #1a1a24; border-bottom: solid #2a2a3a; }
-.theme-dark #set-title         { color: #c9b8f0; }
-.theme-dark #set-close         { background: #22223a; color: #555570; }
-.theme-dark #set-close:hover   { color: #c9b8f0; }
-.theme-dark #set-scroll        { background: #111116; }
-.theme-dark .set-section       { color: #c9b8f0; }
-.theme-dark .set-dir-btn       { background: #18181f; color: #7ec8e3; border: solid #2a2a3a; }
-.theme-dark .set-dir-btn:hover { border: solid #7c5cbf; }
-.theme-dark .set-dir-btn.selected { border: solid red; color: red; }
-.theme-dark #set-add-dir       { background: #1a2233; color: #7ec8e3; border: tall #5b8dd9; }
-.theme-dark #set-delete-dir    { background: #1a0000; color: red; border: tall red; }
-.theme-dark #set-delete-dir:hover { background: red; color: #000000; }
-.theme-dark #set-dir-input     { background: #18181f; color: #7ec8e3; border: tall #2a2a3a; }
-.theme-dark .mode-btn          { background: #22223a; color: #555570; border: tall #2a2a3a; }
-.theme-dark .mode-btn.active   { background: #1a2233; color: #7ec8e3; border: tall #5b8dd9; }
-.theme-dark #set-stop-label    { color: #7ec8e3; }
+MusicPlayerSettingsScreen.theme-dark                    { background: #111116; }
+MusicPlayerSettingsScreen.theme-dark #set-header        { background: #1a1a24; border-bottom: solid #2a2a3a; }
+MusicPlayerSettingsScreen.theme-dark #set-title         { color: #c9b8f0; }
+MusicPlayerSettingsScreen.theme-dark #set-close         { background: #22223a; color: #555570; }
+MusicPlayerSettingsScreen.theme-dark #set-close:hover   { color: #c9b8f0; }
+MusicPlayerSettingsScreen.theme-dark #set-scroll        { background: #111116; }
+MusicPlayerSettingsScreen.theme-dark .set-section       { color: #c9b8f0; }
+MusicPlayerSettingsScreen.theme-dark .set-dir-btn       { background: #18181f; color: #7ec8e3; border: solid #2a2a3a; }
+MusicPlayerSettingsScreen.theme-dark .set-dir-btn:hover { border: solid #7c5cbf; }
+MusicPlayerSettingsScreen.theme-dark .set-dir-btn.selected { border: solid red; color: red; }
+MusicPlayerSettingsScreen.theme-dark #set-add-dir       { background: #1a2233; color: #7ec8e3; border: tall #5b8dd9; }
+MusicPlayerSettingsScreen.theme-dark #set-delete-dir    { background: #1a0000; color: red; border: tall red; }
+MusicPlayerSettingsScreen.theme-dark #set-delete-dir:hover { background: red; color: #000000; }
+MusicPlayerSettingsScreen.theme-dark #set-dir-input     { background: #18181f; color: #7ec8e3; border: tall #2a2a3a; }
+MusicPlayerSettingsScreen.theme-dark .mode-btn          { background: #22223a; color: #555570; border: tall #2a2a3a; }
+MusicPlayerSettingsScreen.theme-dark .mode-btn.active   { background: #1a2233; color: #7ec8e3; border: tall #5b8dd9; }
+MusicPlayerSettingsScreen.theme-dark #set-stop-label    { color: #7ec8e3; }
 
 
 /* LIGHT theme */
-.theme-light MusicPlayerSettingsScreen { background: #f0f0f5; }
-.theme-light #set-header        { background: #e0e0ec; border-bottom: solid #ccccdd; }
-.theme-light #set-title         { color: #1a1a99; }
-.theme-light #set-close         { background: #e8e8f5; color: #888899; }
-.theme-light #set-close:hover   { color: #1a1a99; }
-.theme-light #set-scroll        { background: #f0f0f5; }
-.theme-light .set-section       { color: #1a1a99; }
-.theme-light .set-dir-btn       { background: #ffffff; color: #116622; border: solid #ccccdd; }
-.theme-light .set-dir-btn:hover { border: solid #228833; }
-.theme-light .set-dir-btn.selected { border: solid red; color: red; }
-.theme-light #set-add-dir       { background: #e8f5e8; color: #116622; border: tall #228833; }
-.theme-light #set-delete-dir    { background: #fff0f0; color: red; border: tall red; }
-.theme-light #set-delete-dir:hover { background: red; color: #ffffff; }
-.theme-light #set-dir-input     { background: #ffffff; color: #116622; border: tall #ccccdd; }
-.theme-light .mode-btn          { background: #e8e8f5; color: #888899; border: tall #ccccdd; }
-.theme-light .mode-btn.active   { background: #e8f5e8; color: #116622; border: tall #228833; }
-.theme-light #set-stop-label    { color: #116622; }
+MusicPlayerSettingsScreen.theme-light                    { background: #f0f0f5; }
+MusicPlayerSettingsScreen.theme-light #set-header        { background: #e0e0ec; border-bottom: solid #ccccdd; }
+MusicPlayerSettingsScreen.theme-light #set-title         { color: #1a1a99; }
+MusicPlayerSettingsScreen.theme-light #set-close         { background: #e8e8f5; color: #888899; }
+MusicPlayerSettingsScreen.theme-light #set-close:hover   { color: #1a1a99; }
+MusicPlayerSettingsScreen.theme-light #set-scroll        { background: #f0f0f5; }
+MusicPlayerSettingsScreen.theme-light .set-section       { color: #1a1a99; }
+MusicPlayerSettingsScreen.theme-light .set-dir-btn       { background: #ffffff; color: #116622; border: solid #ccccdd; }
+MusicPlayerSettingsScreen.theme-light .set-dir-btn:hover { border: solid #228833; }
+MusicPlayerSettingsScreen.theme-light .set-dir-btn.selected { border: solid red; color: red; }
+MusicPlayerSettingsScreen.theme-light #set-add-dir       { background: #e8f5e8; color: #116622; border: tall #228833; }
+MusicPlayerSettingsScreen.theme-light #set-delete-dir    { background: #fff0f0; color: red; border: tall red; }
+MusicPlayerSettingsScreen.theme-light #set-delete-dir:hover { background: red; color: #ffffff; }
+MusicPlayerSettingsScreen.theme-light #set-dir-input     { background: #ffffff; color: #116622; border: tall #ccccdd; }
+MusicPlayerSettingsScreen.theme-light .mode-btn          { background: #e8e8f5; color: #888899; border: tall #ccccdd; }
+MusicPlayerSettingsScreen.theme-light .mode-btn.active   { background: #e8f5e8; color: #116622; border: tall #228833; }
+MusicPlayerSettingsScreen.theme-light #set-stop-label    { color: #116622; }
+MusicPlayerSettingsScreen.theme-light #set-stop-switch    { background: #b3b3b3; border: tall #999999; }
 """
 
 MUSIC_PLAYER_CSS =  """
@@ -391,52 +403,52 @@ MusicPlayerScreen       { background: #0a0a0f; }
 #mp-nowplaying-bar      { width: 2fr; color: #444466;
                               content-align: center middle; }
 
-/* DARK theme */
-.theme-dark MusicPlayerScreen   { background: #111116; }
-.theme-dark #mp-searchbar       { background: #1a1a24; border-bottom: solid #2a2a3a; }
-.theme-dark #mp-search          { background: #18181f; color: #7ec8e3; border: tall #2a2a3a; }
-.theme-dark #mp-settings-btn    { background: #22223a; color: #c9b8f0; border: tall #2a2a3a; }
-.theme-dark #mp-settings-btn:hover { background: #2a2a3a; }
-.theme-dark #mp-results         { background: #0e0e14; border: solid #2a2a3a; }
-.theme-dark .mp-result          { background: #0e0e14; color: #7ec8e3; }
-.theme-dark .mp-result:hover    { background: #1a2233; }
-.theme-dark #mp-main            { background: #111116; }
-.theme-dark #mp-track           { color: #c9b8f0; }
-.theme-dark #mp-status          { color: #7ec8e3; }
-.theme-dark #mp-time-pos        { color: #555570; }
-.theme-dark #mp-bar             { color: #7c5cbf; }
-.theme-dark #mp-time-dur        { color: #555570; }
-.theme-dark #mp-prev            { background: #22223a; color: #c9b8f0; border: tall #7c5cbf; }
-.theme-dark #mp-playpause       { background: #1a2233; color: #7ec8e3; border: tall #5b8dd9; }
-.theme-dark #mp-next            { background: #22223a; color: #c9b8f0; border: tall #7c5cbf; }
-.theme-dark #mp-bottombar       { background: #1a1a24; border-top: solid #2a2a3a; }
-.theme-dark #mp-back            { background: #22223a; color: #555570; }
-.theme-dark #mp-back:hover      { color: #c9b8f0; }
-.theme-dark #mp-nowplaying-bar  { color: #555570; }
+/* DARK */
+MusicPlayerScreen.theme-dark             { background: #111116; }
+MusicPlayerScreen.theme-dark #mp-searchbar { background: #1a1a24; border-bottom: solid #2a2a3a; }
+MusicPlayerScreen.theme-dark #mp-search  { background: #18181f; color: #7ec8e3; border: tall #2a2a3a; }
+MusicPlayerScreen.theme-dark #mp-settings-btn { background: #22223a; color: #c9b8f0; border: tall #2a2a3a; }
+MusicPlayerScreen.theme-dark #mp-settings-btn:hover { background: #2a2a3a; }
+MusicPlayerScreen.theme-dark #mp-results { background: #0e0e14; border: solid #2a2a3a; }
+MusicPlayerScreen.theme-dark .mp-result  { background: #0e0e14; color: #7ec8e3; }
+MusicPlayerScreen.theme-dark .mp-result:hover { background: #1a2233; }
+MusicPlayerScreen.theme-dark #mp-main    { background: #111116; }
+MusicPlayerScreen.theme-dark #mp-track   { color: #c9b8f0; }
+MusicPlayerScreen.theme-dark #mp-status  { color: #7ec8e3; }
+MusicPlayerScreen.theme-dark #mp-time-pos { color: #555570; }
+MusicPlayerScreen.theme-dark #mp-bar     { color: #7c5cbf; }
+MusicPlayerScreen.theme-dark #mp-time-dur { color: #555570; }
+MusicPlayerScreen.theme-dark #mp-prev    { background: #22223a; color: #c9b8f0; border: tall #7c5cbf; }
+MusicPlayerScreen.theme-dark #mp-playpause { background: #1a2233; color: #7ec8e3; border: tall #5b8dd9; }
+MusicPlayerScreen.theme-dark #mp-next    { background: #22223a; color: #c9b8f0; border: tall #7c5cbf; }
+MusicPlayerScreen.theme-dark #mp-bottombar { background: #1a1a24; border-top: solid #2a2a3a; }
+MusicPlayerScreen.theme-dark #mp-back    { background: #22223a; color: #555570; }
+MusicPlayerScreen.theme-dark #mp-back:hover { color: #c9b8f0; }
+MusicPlayerScreen.theme-dark #mp-nowplaying-bar { color: #555570; }
 
 
-/* LIGHT theme */
-.theme-light MusicPlayerScreen  { background: #f0f0f5; }
-.theme-light #mp-searchbar      { background: #e0e0ec; border-bottom: solid #ccccdd; }
-.theme-light #mp-search         { background: #ffffff; color: #116622; border: tall #ccccdd; }
-.theme-light #mp-settings-btn   { background: #e8e8f5; color: #1a1a99; border: tall #ccccdd; }
-.theme-light #mp-settings-btn:hover { background: #dde8ff; }
-.theme-light #mp-results        { background: #fafafa; border: solid #ccccdd; }
-.theme-light .mp-result         { background: #fafafa; color: #116622; }
-.theme-light .mp-result:hover   { background: #ddffd8; }
-.theme-light #mp-main           { background: #f0f0f5; }
-.theme-light #mp-track          { color: #1a1a99; }
-.theme-light #mp-status         { color: #116622; }
-.theme-light #mp-time-pos       { color: #888899; }
-.theme-light #mp-bar            { color: #3366cc; }
-.theme-light #mp-time-dur       { color: #888899; }
-.theme-light #mp-prev           { background: #e8e8f5; color: #1a1a99; border: tall #3366cc; }
-.theme-light #mp-playpause      { background: #e8f5e8; color: #116622; border: tall #228833; }
-.theme-light #mp-next           { background: #e8e8f5; color: #1a1a99; border: tall #3366cc; }
-.theme-light #mp-bottombar      { background: #e0e0ec; border-top: solid #ccccdd; }
-.theme-light #mp-back           { background: #e8e8f5; color: #888899; }
-.theme-light #mp-back:hover     { color: #1a1a99; }
-.theme-light #mp-nowplaying-bar { color: #888899; }
+/* LIGHT */
+MusicPlayerScreen.theme-light             { background: #f0f0f5; }
+MusicPlayerScreen.theme-light #mp-searchbar { background: #e0e0ec; border-bottom: solid #ccccdd; }
+MusicPlayerScreen.theme-light #mp-search  { background: #ffffff; color: #116622; border: tall #ccccdd; }
+MusicPlayerScreen.theme-light #mp-settings-btn { background: #e8e8f5; color: #1a1a99; border: tall #ccccdd; }
+MusicPlayerScreen.theme-light #mp-settings-btn:hover { background: #dde8ff; }
+MusicPlayerScreen.theme-light #mp-results { background: #fafafa; border: solid #ccccdd; }
+MusicPlayerScreen.theme-light .mp-result  { background: #fafafa; color: #116622; }
+MusicPlayerScreen.theme-light .mp-result:hover { background: #ddffd8; }
+MusicPlayerScreen.theme-light #mp-main    { background: #f0f0f5; }
+MusicPlayerScreen.theme-light #mp-track   { color: #1a1a99; }
+MusicPlayerScreen.theme-light #mp-status  { color: #116622; }
+MusicPlayerScreen.theme-light #mp-time-pos { color: #888899; }
+MusicPlayerScreen.theme-light #mp-bar     { color: #3366cc; }
+MusicPlayerScreen.theme-light #mp-time-dur { color: #888899; }
+MusicPlayerScreen.theme-light #mp-prev    { background: #e8e8f5; color: #1a1a99; border: tall #3366cc; }
+MusicPlayerScreen.theme-light #mp-playpause { background: #e8f5e8; color: #116622; border: tall #228833; }
+MusicPlayerScreen.theme-light #mp-next    { background: #e8e8f5; color: #1a1a99; border: tall #3366cc; }
+MusicPlayerScreen.theme-light #mp-bottombar { background: #e0e0ec; border-top: solid #ccccdd; }
+MusicPlayerScreen.theme-light #mp-back    { background: #e8e8f5; color: #888899; }
+MusicPlayerScreen.theme-light #mp-back:hover { color: #1a1a99; }
+MusicPlayerScreen.theme-light #mp-nowplaying-bar { color: #888899; }
 """
 
 FILE_EXPLORER_CSS = """
@@ -462,33 +474,35 @@ FileBrowserScreen   { background: #0a0a0f; }
 #file-input         { background: #050510; color: #00ff41;
                           border: tall #333355; }
 
+
 /* DARK */
-.theme-dark FileBrowserScreen  { background: #111116; }
-.theme-dark #file-header       { background: #1a1a24; border-bottom: solid #2a2a3a; }
-.theme-dark #file-back-main    { background: #22223a; color: #555570; }
-.theme-dark #file-back-main:hover { color: #c9b8f0; }
-.theme-dark #file-up-btn       { background: #22223a; color: #c9b8f0; border: tall #7c5cbf; }
-.theme-dark #file-path-display { color: #555570; }
-.theme-dark #file-scroll       { border: double #2a2a3a; background: #0e0e14; }
-.theme-dark .file-dir-btn      { background: #0e0e14; color: #c9b8f0; }
-.theme-dark .file-file-btn     { background: #0e0e14; color: #7ec8e3; }
-.theme-dark .file-dir-btn:hover  { background: #22223a; }
-.theme-dark .file-file-btn:hover { background: #1a2233; }
-.theme-dark .file-footer       { color: #555570; }
-.theme-dark #file-input        { background: #18181f; color: #7ec8e3; border: tall #2a2a3a; }
+FileBrowserScreen.theme-dark                  { background: #111116; }
+FileBrowserScreen.theme-dark #file-header     { background: #1a1a24; border-bottom: solid #2a2a3a; }
+FileBrowserScreen.theme-dark #file-back-main  { background: #22223a; color: #555570; }
+FileBrowserScreen.theme-dark #file-back-main:hover { color: #c9b8f0; }
+FileBrowserScreen.theme-dark #file-up-btn     { background: #22223a; color: #c9b8f0; border: tall #7c5cbf; }
+FileBrowserScreen.theme-dark #file-path-display { color: #555570; }
+FileBrowserScreen.theme-dark #file-scroll     { border: double #2a2a3a; background: #0e0e14; }
+FileBrowserScreen.theme-dark .file-dir-btn    { background: #0e0e14; color: #c9b8f0; }
+FileBrowserScreen.theme-dark .file-file-btn   { background: #0e0e14; color: #7ec8e3; }
+FileBrowserScreen.theme-dark .file-dir-btn:hover  { background: #22223a; }
+FileBrowserScreen.theme-dark .file-file-btn:hover { background: #1a2233; }
+FileBrowserScreen.theme-dark .file-footer     { color: #555570; }
+FileBrowserScreen.theme-dark #file-input      { background: #18181f; color: #7ec8e3; border: tall #2a2a3a; }
+
 
 /* LIGHT */
-.theme-light FileBrowserScreen  { background: #f0f0f5; }
-.theme-light #file-header       { background: #e0e0ec; border-bottom: solid #ccccdd; }
-.theme-light #file-back-main    { background: #e8e8f5; color: #888899; }
-.theme-light #file-back-main:hover { color: #1a1a99; }
-.theme-light #file-up-btn       { background: #e8e8f5; color: #1a1a99; border: tall #3366cc; }
-.theme-light #file-path-display { color: #888899; }
-.theme-light #file-scroll       { border: double #ccccdd; background: #fafafa; }
-.theme-light .file-dir-btn      { background: #fafafa; color: #1a1a99; }
-.theme-light .file-file-btn     { background: #fafafa; color: #116622; }
-.theme-light .file-dir-btn:hover  { background: #dde8ff; }
-.theme-light .file-file-btn:hover { background: #ddffd8; }
-.theme-light .file-footer       { color: #888899; }
-.theme-light #file-input        { background: #ffffff; color: #116622; border: tall #ccccdd; }
+FileBrowserScreen.theme-light                  { background: #f0f0f5; }
+FileBrowserScreen.theme-light #file-header     { background: #e0e0ec; border-bottom: solid #ccccdd; }
+FileBrowserScreen.theme-light #file-back-main  { background: #e8e8f5; color: #888899; }
+FileBrowserScreen.theme-light #file-back-main:hover { color: #1a1a99; }
+FileBrowserScreen.theme-light #file-up-btn     { background: #e8e8f5; color: #1a1a99; border: tall #3366cc; }
+FileBrowserScreen.theme-light #file-path-display { color: #888899; }
+FileBrowserScreen.theme-light #file-scroll     { border: double #ccccdd; background: #fafafa; }
+FileBrowserScreen.theme-light .file-dir-btn    { background: #fafafa; color: #1a1a99; }
+FileBrowserScreen.theme-light .file-file-btn   { background: #fafafa; color: #116622; }
+FileBrowserScreen.theme-light .file-dir-btn:hover  { background: #dde8ff; }
+FileBrowserScreen.theme-light .file-file-btn:hover { background: #ddffd8; }
+FileBrowserScreen.theme-light .file-footer     { color: #888899; }
+FileBrowserScreen.theme-light #file-input      { background: #ffffff; color: #116622; border: tall #ccccdd; }
 """
