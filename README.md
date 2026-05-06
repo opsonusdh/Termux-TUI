@@ -1,5 +1,6 @@
 # TermuxDash 🖥
-"
+
+``` text
 ╔══════════════════════════════════════╗
 ║                                      ║
 ║       ███                            ║
@@ -13,7 +14,8 @@
 ║                                      ║
 ║                                      ║
 ╚══════════════════════════════════════╝
-"️
+```
+
 A futuristic, Jarvis-style terminal dashboard for Termux — built entirely in Python with no display server, no XFCE, no GUI required.
 
 ![App Screenshot](assets/screenshot.jpg)
