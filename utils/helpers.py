@@ -161,3 +161,56 @@ def mp_info():
 def to_mmss(sec):
     sec = max(0, int(sec))
     return f"{sec // 60}:{sec % 60:02d}"
+    
+def run_cmd(*args, timeout=10):
+    try:
+        r = subprocess.run(list(args), capture_output=True, text=True, timeout=timeout)
+        return r.stdout.strip()
+    except Exception:
+        return "[]"
+
+def call_number(number):
+    try:
+        subprocess.Popen(['termux-telephony-call', number])
+    except Exception:
+        pass
+
+def fetch_contacts():
+    out = run_cmd('termux-contact-list', timeout=15)
+    try:
+        return json.loads(out)
+    except Exception:
+        return []
+
+def fetch_call_log(limit=20, offset=0):
+    out = run_cmd('termux-call-log', '-l', str(limit), '-o', str(offset), timeout=10)
+    try:
+        logs = json.loads(out)
+        return list(reversed(logs))
+    except Exception:
+        return []
+
+def type_icon(t):
+    t = t.upper()
+    if t == "INCOMING":  return "↓"
+    if t == "OUTGOING":  return "↑"
+    if t == "MISSED":    return "×"
+    return "📞"
+
+def clean_number(n):
+    return re.sub(r'[^\d+]', '', n)
+
+def match_contacts(typed, contacts):
+    if not typed:
+        return []
+    digits = re.sub(r'\D', '', typed)
+    if not digits:
+        return []
+    matches = []
+    for c in contacts:
+        num = re.sub(r'\D', '', c.get('number', ''))
+        if digits in num:
+            matches.append(c)
+        if len(matches) >= 5:
+            break
+    return matches

@@ -1,4 +1,19 @@
-# TermuxDash 🖥️
+# TermuxDash 🖥
+```
+╔══════════════════════════════════════╗
+║                                      ║
+║       ███                            ║
+║       ░░░███                         ║
+║         ░░░███                       ║
+║           ░░░███                     ║
+║            ███░                      ║
+║          ███░                        ║
+║        ███░        █████████         ║
+║        ░░░         ░░░░░░░░░         ║
+║                                      ║
+║                                      ║
+╚══════════════════════════════════════╝
+```️
 A futuristic, Jarvis-style terminal dashboard for Termux — built entirely in Python with no display server, no XFCE, no GUI required.
 
 ![App Screenshot](assets/screenshot.jpg)
@@ -27,9 +42,10 @@ No root. No X11. No display server. Just Python.
 - Scrollable grid — add as many commands as you want without overflow
 - Speedtest — runs speedtest-cli and displays Download/Upload/Ping/Server as parsed key-value pairs
 ### 🎮 Apps Tab
-- 2 apps added.
+- 3 apps added.
 - Music player
 - File manager
+- Dialer
 
 ### 📝 Also
 - 3 main Theme

@@ -13,7 +13,7 @@ import subprocess, os, re, time, json
 from datetime import datetime
 from utils.constants import SPLASH, BASIC_COMMANDS, TOOLS, CAT_STYLE, SYSTEM_CMDS, ICONS, CSS_SPLASH_SCREEN, CSS_MAIN
 from utils.helpers import strip_ansi, get_recent_programs, get_battery, get_memory, run_speedtest, fmt_speed, flatten_json, fmt_size, load_config, save_config
-from utils.apps import MusicPlayerScreen, FileBrowserScreen
+from utils.apps import MusicPlayerScreen, FileBrowserScreen, DialerScreen
 
 # Loading Config
 config = load_config()
@@ -139,6 +139,7 @@ class TermuxDashboard(App):
                 with Grid(id="apps-grid"):
                     yield Button("📁 File Browser", id="app-files", classes="apps")
                     yield Button("🎵 Music Player", id="app-music", classes="apps")
+                    yield Button("📞 Dialer", id="app-dialer", classes="apps")
                         
 
         yield Footer()
@@ -236,6 +237,8 @@ class TermuxDashboard(App):
             self.push_screen(MusicPlayerScreen())
         elif bid == "app-files":
             self.app.push_screen(FileBrowserScreen())
+        elif bid == "app-dialer":
+            self.app.push_screen(DialerScreen())
 
 
     # INPUT HANDLER
