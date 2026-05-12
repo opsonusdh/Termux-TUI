@@ -4,7 +4,12 @@ All notable changes to Termux-TUI will be documented here.
 
 ---
 
-## [2.5.0] - current
+## [2.5.1] - current
+
+### Fixed
+- crash in dialer. 
+
+## [2.5.0]
 
 ### Added
 - 4 apps in apps tab

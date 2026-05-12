@@ -688,8 +688,7 @@ class DialerScreen(Screen):
         gen    = self._contact_gen
         scroll = self.query_one("#contacts-scroll", VerticalScroll)
         scroll.remove_children()
-
-        if not contacts or contacts.get("error", False):
+        if not contacts or isinstance(contacts, dict):
             scroll.mount(Static("No contact found."))
             return
 
