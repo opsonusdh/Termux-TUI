@@ -3,7 +3,40 @@
 All notable changes to Termux-TUI will be documented here.
 
 ---
-## [2.6.1] - current
+## [2.7.0] - current
+
+### Changed
+- the file structure of source code is changed to make the code more distributed and easily readable.
+- the current file structure is:
+```
+Termux-TUI
+├── CHANGELOG.md
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── LICENSE.md
+├── README.md
+├── SECURITY.md
+├── assets
+├── main.py
+├── requirements.txt
+└── utils
+    ├── __init__.py
+    ├── apps
+    │   ├── app_utils
+    │   │   ├── dialer_utils.py
+    │   │   ├── file_manager_utils.py
+    │   │   ├── music_player_utils.py
+    │   │   └── ytmp3_utils.py
+    │   ├── dialer.py
+    │   ├── file_manager.py
+    │   ├── music_player.py
+    │   └── ytmp3.py
+    ├── constants.py
+    └── helpers.py
+
+```
+
+## [2.6.1]
 
 ### Fixed
 - on main splash screen, clicking on any button skipped the diagnosis. Fixed that.

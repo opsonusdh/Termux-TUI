@@ -11,9 +11,13 @@ from functools import partial
 from rich.text import Text
 import subprocess, os, re, time, json
 from datetime import datetime
-from utils.constants import SPLASH, BASIC_COMMANDS, TOOLS, CAT_STYLE, SYSTEM_CMDS, ICONS, CSS_SPLASH_SCREEN, CSS_MAIN
+from utils.constants import SPLASH, BASIC_COMMANDS, TOOLS, CAT_STYLE, SYSTEM_CMDS, CSS_SPLASH_SCREEN, CSS_MAIN
 from utils.helpers import strip_ansi, get_recent_programs, get_battery, get_memory, run_speedtest, fmt_speed, flatten_json, fmt_size, load_config, save_config
-from utils.apps import MusicPlayerScreen, FileBrowserScreen, DialerScreen, YTmp3Screen
+from utils.apps.dialer import DialerScreen
+from utils.apps.file_manager import FileBrowserScreen
+from utils.apps.music_player import MusicPlayerScreen
+from utils.apps.ytmp3 import YTmp3Screen
+
 
 # Loading Config
 config = load_config()
