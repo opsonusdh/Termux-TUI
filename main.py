@@ -30,15 +30,16 @@ class SplashScreen(Screen):
     def on_mount(self):
         self.run_diagnosis()
 
-#    def on_key(self):
-#        self.dismiss()
+    def on_key(self):
+        self.dismiss()
         
     @work(thread=True)
     def run_diagnosis(self):
-        subprocess.run("yes|termux-setup-storage", shell=True)
-        subprocess.run("termux-call-log", shell=True)
-        subprocess.run("termux-contact-list", shell=True)
-        subprocess.run("termux-telephony-cellinfo", shell=True)
+        # capture_output=True prevents any stdout/stderr from leaking to the terminal
+        subprocess.run("yes|termux-setup-storage", shell=True, capture_output=True)
+        subprocess.run("termux-call-log",          shell=True, capture_output=True)
+        subprocess.run("termux-contact-list",      shell=True, capture_output=True)
+        subprocess.run("termux-telephony-cellinfo",shell=True, capture_output=True)
         self.app.call_from_thread(self.dismiss)
 
 
@@ -192,17 +193,22 @@ class TermuxDashboard(App):
 
         # alert pulse when battery < 20%
         if self._tick_count % 5 == 0:
-            pct = int(self._cached_batt.split('%')[0].strip()) if "%" in self._cached_batt else 100 
-            temp = float(self._cached_batt.split('°C')[0].split("🔥")[1].strip()) if "🔥" in self._cached_batt else 0
-            box = self.query_one("#sys-info-box")
+            try:
+                pct = int(self._cached_batt.split('%')[0].strip()) if "%" in self._cached_batt else 100
+            except (ValueError, IndexError):
+                pct = 100
+            try:
+                temp = float(self._cached_batt.split('°C')[0].split("🔥")[1].strip()) if "🔥" in self._cached_batt else 0
+            except (ValueError, IndexError):
+                temp = 0
             if pct < 20 or temp >= 40:
                 self._alert_blink = not self._alert_blink
                 if self._alert_blink:
-                    self.call_from_thread(box.add_class, "alert")
+                    self.call_from_thread(self.query_one("#sys-info-box").add_class, "alert")
                 else:
-                    self.call_from_thread(box.remove_class, "alert")
+                    self.call_from_thread(self.query_one("#sys-info-box").remove_class, "alert")
             else:
-                self.call_from_thread(box.remove_class, "alert")
+                self.call_from_thread(self.query_one("#sys-info-box").remove_class, "alert")
         
 
     # WEATHER
@@ -326,11 +332,19 @@ class TermuxDashboard(App):
             return
 
         try:
+            cmd_timeout = cfg.get('timeout', 15)
             r = subprocess.run(
-                cfg['cmd'], shell=True, capture_output=True, text=True, timeout=15
+                cfg['cmd'], shell=True, capture_output=True, text=True, timeout=cmd_timeout
             )
             out = r.stdout.strip()
-            if cfg['json'] and out:
+            err = r.stderr.strip()
+            if not out and err:
+                w_raw(f"⚠ {err[:200]}")
+                return
+            if not out:
+                w_raw("(no output — check termux-api permissions)")
+                return
+            if cfg['json']:
                 try:
                     for key, val in flatten_json(json.loads(out)):
                         if key == "__SEP__":
@@ -339,13 +353,12 @@ class TermuxDashboard(App):
                             )
                         else:
                             w_kv(key, val)
-                    
                 except json.JSONDecodeError:
                     for line in out.splitlines(): w_raw(line)
             else:
                 for line in out.splitlines(): w_raw(line)
         except subprocess.TimeoutExpired:
-            w_raw("⏱ Command timed out")
+            w_raw(f"⏱ Timed out after {cfg.get('timeout', 15)}s — command may need more permissions or is unavailable")
         except Exception as e:
             w_raw(f"✗ {e}")
 

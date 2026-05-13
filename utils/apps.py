@@ -58,7 +58,7 @@ class MusicPlayerSettingsScreen(Screen):
             yield Static("▸ BEHAVIOUR", classes="set-section")
             with Horizontal(id="set-stop-row"):
                 yield Static("Stop music when closing player", id="set-stop-label")
-                yield Switch(value=self._config.get("music_stop_on_close", True),
+                yield Switch(value=self._config.get("music_stop_on_close", False),
                              id="set-stop-switch")
     
     def on_mount(self):
@@ -160,19 +160,16 @@ class MusicPlayerScreen(Screen):
 
     CSS = MUSIC_PLAYER_CSS
 
-    _all_songs    = []
-    _current_idx  = 0
-    _pos_sec      = 0
-    _dur_sec      = 0
-    _is_playing   = False
-    _poll_counter = 0
-    _nav_gen      = 0
-    _config       = {}
-    
-
     def __init__(self):
         super().__init__()
-        self._config = load_config()
+        self._config       = load_config()
+        self._all_songs    = []
+        self._current_idx  = 0
+        self._pos_sec      = 0
+        self._dur_sec      = 0
+        self._is_playing   = False
+        self._poll_counter = 0
+        self._nav_gen      = 0
         
 
     def compose(self) -> ComposeResult:
@@ -286,17 +283,19 @@ class MusicPlayerScreen(Screen):
             return
         path = songs[idx]
         mp_run('play', path)
-        self._current_idx = idx
-        self._pos_sec     = 0
-        self._dur_sec     = 0
-        self._is_playing  = True
+        self._current_idx  = idx
+        self._pos_sec      = 0
+        self._dur_sec      = 0
+        self._is_playing   = True
         self._poll_counter = 0   # force sync next tick
 
         name = os.path.basename(path)
-        self.query_one("#mp-track",       Static).update(name)
-        self.query_one("#mp-status",      Static).update("▶")
-        self.query_one("#mp-playpause",   Button).label = "| |"
-        self.query_one("#mp-nowplaying-bar", Static).update(f"♫ {name}")
+        def update_ui():
+            self.query_one("#mp-track",          Static).update(name)
+            self.query_one("#mp-status",          Static).update("▶")
+            self.query_one("#mp-playpause",       Button).label = "| |"
+            self.query_one("#mp-nowplaying-bar",  Static).update(f"♫ {name}")
+        self.app.call_from_thread(update_ui)
 
     def _advance(self):
         """Auto-advance based on mode."""
@@ -367,7 +366,7 @@ class MusicPlayerScreen(Screen):
         bid = str(event.button.id)
 
         if bid == "mp-back":
-            if self._config.get("music_stop_on_close", True):
+            if self._config.get("music_stop_on_close", False):
                 mp_run('stop')
             save_config(self._config)
             self.dismiss()
@@ -387,7 +386,7 @@ class MusicPlayerScreen(Screen):
                 event.button.label = "▶"
                 self.query_one("#mp-status", Static).update("| |")
             elif self._pos_sec > 0:
-                mp_run('play')
+                mp_run('resume')
                 self._is_playing = True
                 event.button.label = "| |"
                 self.query_one("#mp-status", Static).update("▶  PLAYING")
@@ -431,10 +430,12 @@ class MusicPlayerScreen(Screen):
 class FileBrowserScreen(Screen):
     CSS = FILE_EXPLORER_CSS
 
-    _file_entries = {}
-    _nav_gen      = 0
-    _current_path = os.path.expanduser("~")
-    _config = load_config()
+    def __init__(self):
+        super().__init__()
+        self._file_entries = {}
+        self._nav_gen      = 0
+        self._current_path = os.path.expanduser("~")
+        self._config       = load_config()
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="file-header"):
@@ -570,13 +571,15 @@ class DialerScreen(Screen):
 
     CSS = DIALER_CSS
 
-    _typed        = ""
-    _contacts     = []
-    _log_offset   = 0
-    _log_gen      = 0
-    _contact_gen  = 0
-    _active_tab   = "dialer"
-    _config = load_config()
+    def __init__(self):
+        super().__init__()
+        self._typed       = ""
+        self._contacts    = []
+        self._log_offset  = 0
+        self._log_gen     = 0
+        self._contact_gen = 0
+        self._active_tab  = "dialer"
+        self._config      = load_config()
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="dial-header"):
@@ -983,27 +986,26 @@ class YTmp3Screen(Screen):
 
     CSS = YTMP3_CSS
 
-    #  state 
-    _config          = {}
-    _query           = ""
-    _search_results  = []   # all fetched so far
-    _search_offset   = 0
-    _result_gen      = 0
-    _queue           = []   # list of track dicts currently playing from
-    _queue_idx       = -1   # current index in _queue
-    _is_playing      = False
-    _pos_sec         = 0
-    _dur_sec         = 0
-    _poll_counter    = 0
-    _dl_lock         = threading.Lock()
-    _playlist_mode   = False   # True when playing from a playlist
-    _playlist_name   = ""
-    _radio_queue     = []   # YouTube algo recommendations for current track
-    _radio_fetched   = False
+    #  compose 
 
     def __init__(self):
         super().__init__()
-        self._config = load_yt_config()
+        self._config          = load_yt_config()
+        self._query           = ""
+        self._search_results  = []
+        self._search_offset   = 0
+        self._result_gen      = 0
+        self._queue           = []
+        self._queue_idx       = -1
+        self._is_playing      = False
+        self._pos_sec         = 0
+        self._dur_sec         = 0
+        self._poll_counter    = 0
+        self._dl_lock         = threading.Lock()
+        self._playlist_mode   = False
+        self._playlist_name   = ""
+        self._radio_queue     = []
+        self._radio_fetched   = False
 
     #  config-aware temp paths 
 
@@ -1231,9 +1233,6 @@ class YTmp3Screen(Screen):
             self.query_one("#yt-np-status",   Static).update,
             "▶  PLAYING"
         )
-        self.app.call_from_thread(
-            self.query_one("#yt-playpause",   Button).label.__class__,
-        )
         def set_pause():
             self.query_one("#yt-playpause", Button).label = "⏸"
         self.app.call_from_thread(set_pause)
@@ -1381,7 +1380,7 @@ class YTmp3Screen(Screen):
                 event.button.label = "▶"
                 self.query_one("#yt-np-status", Static).update("⏸  PAUSED")
             elif status == 'paused':
-                mp_run('play')
+                mp_run('resume')
                 self._is_playing = True
                 event.button.label = "⏸"
                 self.query_one("#yt-np-status", Static).update("▶  PLAYING")

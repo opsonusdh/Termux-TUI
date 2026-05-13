@@ -1,6 +1,6 @@
 import os 
 
-VERSION="2.5.2"
+VERSION="2.6.0"
 
 def _make_splash(version): 
 	inner_width=38 
@@ -226,81 +226,78 @@ CAT_STYLE= {
 	"Package Manager": "bold green",
 }
 
-SYSTEM_CMDS=[ 
-	{
-		"id": "battery", "name":"🔋 Battery", "cmd":"termux-battery-status", "json":True
-	}
-
-	,
-	{
-	"id": "wifi", "name":"📡 WiFi Info", "cmd":"termux-wifi-connectioninfo", "json":True
-	}
-
-	,
-	{
-	"id": "location", "name":"📍 Location", "cmd":"termux-location -p gps", "json":True
-	}
-
-	,
-	{
-	"id": "device", "name":"📱 Telephony", "cmd":"termux-telephony-deviceinfo", "json":True
-	}
-
-	,
-	{
-	"id": "wifiscan", "name":"📶 WiFi Scan", "cmd":"termux-wifi-scaninfo", "json":True
-	}
-
-	,
-	{
-	"id": "camera", "name":"📷 Camera", "cmd":"termux-camera-info", "json":True
-	}
-
-	,
-	{
-	"id": "sensor", "name":"🌡 Sensors", "cmd":"termux-sensor -a -n 1", "json":True
-	}
-
-	,
-	{
-	"id": "ip", "name":"🌐 Public IP", "cmd":"curl -s ifconfig.me", "json":False
-	}
-
-	,
-	{
-	"id": "storage", "name":"💾 Storage", "cmd":"df -h /data", "json":False
-	}
-
-	,
-	{
-	"id": "uptime", "name":"⏱ Uptime", "cmd":"uptime", "json":False
-	}
-
-	,
-	{
-	"id": "procs", "name":"⚡ Processes", "cmd":"ps -A | head -25", "json":False
-	}
-
-	,
-	{
-	"id": "netstat", "name":"🔌 Connections", "cmd":"netstat -tn 2>/dev/null | head -20", "json":False
-	}
-
-	,
-	{
-	"id": "speedtest", "name":"🚀 Speedtest", "cmd":"speedtest-cli", "json":False, "special":"speedtest"
-	}
-
-	,
-	{
-	"id": "notifications", "name":"🔔 Notifications", "cmd":"termux-notification-list", "json":True
-	}
-
-	,
-	{
-	"id": "sms", "name":"💬 SMS Inbox", "cmd":"termux-sms-list -l 10", "json":True
-	}
-
+SYSTEM_CMDS=[
+    # timeout=seconds per command; omit to use default (15s)
+    {
+        "id": "battery", "name": "🔋 Battery",
+        "cmd": "termux-battery-status", "json": True, "timeout": 8
+    },
+    {
+        "id": "wifi", "name": "📡 WiFi Info",
+        "cmd": "termux-wifi-connectioninfo", "json": True, "timeout": 10
+    },
+    {
+        # GPS can take 60s+ to get a fix; network provider is instant
+        "id": "location", "name": "📍 Location",
+        "cmd": "termux-location -p network -r once", "json": True, "timeout": 20
+    },
+    {
+        "id": "device", "name": "📱 Telephony",
+        "cmd": "termux-telephony-deviceinfo", "json": True, "timeout": 8
+    },
+    {
+        # trigger a fresh scan first (fire-and-forget), then read cached results
+        "id": "wifiscan", "name": "📶 WiFi Scan",
+        "cmd": "termux-wifi-enable true; sleep 2; termux-wifi-scaninfo", "json": True, "timeout": 20
+    },
+    {
+        "id": "camera", "name": "📷 Camera",
+        "cmd": "termux-camera-info", "json": True, "timeout": 8
+    },
+    {
+        # -n 1 = one sample; -c cleans up the sensor listener properly
+        "id": "sensor", "name": "🌡 Sensors",
+        "cmd": "termux-sensor -a -n 1 -d 500", "json": True, "timeout": 15
+    },
+    {
+        # primary: fast API; fallback: curl ipinfo in same shell
+        "id": "ip", "name": "🌐 Public IP",
+        "cmd": "curl -s --max-time 8 https://ipinfo.io || curl -s --max-time 8 ifconfig.me",
+        "json": False, "timeout": 12
+    },
+    {
+        # show both internal storage and sdcard if present
+        "id": "storage", "name": "💾 Storage",
+        "cmd": "df -h /data /sdcard 2>/dev/null || df -h /data", "json": False, "timeout": 6
+    },
+    {
+        "id": "uptime", "name": "⏱ Uptime",
+        "cmd": "uptime && echo '' && free -h", "json": False, "timeout": 5
+    },
+    {
+        # ps -A can be huge; show top CPU consumers instead
+        "id": "procs", "name": "⚡ Processes",
+        "cmd": "ps -eo pid,pcpu,pmem,comm --sort=-pcpu 2>/dev/null | head -20 || ps -A | head -20",
+        "json": False, "timeout": 8
+    },
+    {
+        # netstat not available in Termux by default; use ss or /proc/net
+        "id": "netstat", "name": "🔌 Connections",
+        "cmd": "ss -tn 2>/dev/null | head -20 || cat /proc/net/tcp6 2>/dev/null | awk 'NR>1{print $3}' | head -15",
+        "json": False, "timeout": 8
+    },
+    {
+        "id": "speedtest", "name": "🚀 Speedtest",
+        "cmd": "speedtest-cli", "json": False, "special": "speedtest"
+    },
+    {
+        "id": "notifications", "name": "🔔 Notifications",
+        "cmd": "termux-notification-list", "json": True, "timeout": 8
+    },
+    {
+        "id": "sms", "name": "💬 SMS Inbox",
+        "cmd": "termux-sms-list -l 10", "json": True, "timeout": 12
+    },
 ] 
 ICONS= {
 	'py': '🐍', 'sh': '📜', 'txt': '📄', 'md': '📝',
@@ -333,7 +330,7 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 TEMP_CURR=os.path.join(TEMP_DIR, "current.mp3") 
 TEMP_NEXT=os.path.join(TEMP_DIR, "next.mp3") 
 TEMP_PREV=os.path.join(TEMP_DIR, "prev.mp3") 
-DEFAULT_YT_DOWNLOAD_DIR=os.path.expanduser("/YouTube")
+DEFAULT_YT_DOWNLOAD_DIR=os.path.expanduser("~/YouTube")
 
 
 # CSS 

@@ -5,7 +5,7 @@ from .constants import (
 )
 
 def strip_ansi(text):
-    return re.sub(r'\x1b\[[0-9;]*m', '', text)
+    return re.sub(r'\x1b(?:[@-Z\\-_]|\[[0-9;]*[ -/]*[@-~])', '', text)
 
 def get_recent_programs(n=4):
     history_file = os.path.expanduser("~/.bash_history")
