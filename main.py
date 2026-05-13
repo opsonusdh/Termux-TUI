@@ -30,8 +30,9 @@ class SplashScreen(Screen):
     def on_mount(self):
         self.run_diagnosis()
 
-    def on_key(self):
-        self.dismiss()
+# IMPORTANT: Please do not enable this. Because that will skip the diagnosis
+#    def on_key(self):
+#        self.dismiss()
         
     @work(thread=True)
     def run_diagnosis(self):

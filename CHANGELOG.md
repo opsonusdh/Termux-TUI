@@ -3,8 +3,12 @@
 All notable changes to Termux-TUI will be documented here.
 
 ---
+## [2.6.1] - current
 
-## [2.6.0] - current
+### Fixed
+- on main splash screen, clicking on any button skipped the diagnosis. Fixed that.
+
+## [2.6.0]
 
 ### Fixed
 
