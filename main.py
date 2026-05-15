@@ -20,10 +20,8 @@ from utils.apps.ytmp3 import YTmp3Screen
 from utils.apps.github_repo_finder import RepoExploreScreen
 
 
-# Loading Config
 config = load_config()
-    
-    
+
 # SPLASH SCREEN
 class SplashScreen(Screen):
     CSS = CSS_SPLASH_SCREEN
@@ -38,16 +36,14 @@ class SplashScreen(Screen):
 # IMPORTANT: Please do not enable this. Because that will skip the diagnosis
 #    def on_key(self):
 #        self.dismiss()
-        
+
     @work(thread=True)
     def run_diagnosis(self):
-        # capture_output=True prevents any stdout/stderr from leaking to the terminal
         subprocess.run("yes|termux-setup-storage", shell=True, capture_output=True)
         subprocess.run("termux-call-log",          shell=True, capture_output=True)
         subprocess.run("termux-contact-list",      shell=True, capture_output=True)
         subprocess.run("termux-telephony-cellinfo",shell=True, capture_output=True)
         self.app.call_from_thread(self.dismiss)
-
 
 # Theme colour
 class ThemeCommand(Provider):
@@ -58,7 +54,6 @@ class ThemeCommand(Provider):
     ]
 
     async def discover(self) -> Hits:
-        """Shown when palette opens with no query."""
         for label, key in self._themes:
             yield DiscoveryHit(
                 display=label,
@@ -67,7 +62,6 @@ class ThemeCommand(Provider):
             )
 
     async def search(self, query: str) -> Hits:
-        """Shown when user types."""
         for label, key in self._themes:
             if query.lower() in label.lower():
                 yield Hit(
@@ -78,21 +72,15 @@ class ThemeCommand(Provider):
                     help="Switch colour palette",
                 )
 
-
-
-
 # MAIN APP
 class TermuxDashboard(App):
     COMMANDS = App.COMMANDS | {ThemeCommand}
     _tick_count   = 0
     _cached_batt  = "..."
     _cached_mem   = "..."
-    _net_rx_prev  = 0
-    _net_tx_prev  = 0
     _alert_blink  = False
 
     CSS = CSS_MAIN
-   
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -115,7 +103,7 @@ class TermuxDashboard(App):
                     yield Input(placeholder="$ Enter any command...",   id="cmd-input")
                     yield Log(id="log-view")
 
-            # PACKAGES 
+            # PACKAGES
             with TabPane("📦 Packages"):
                 with Vertical():
                     with VerticalScroll(id="pkg-scroll"):
@@ -143,7 +131,6 @@ class TermuxDashboard(App):
                                     yield Button(cmd['name'], id=f"syscmd-{cmd['id']}", classes="sys-btn")
                     yield RichLog(id="sys-log", markup=True)
 
-                    
             # APPS
             with TabPane("🎮 Apps"):
                 with Grid(id="apps-grid"):
@@ -161,35 +148,31 @@ class TermuxDashboard(App):
         self.fetch_weather()
         self.set_interval(1, self.tick_sysinfo)
         self.set_theme(config.get("theme", "jarvis"))
-    
+
     def set_theme(self, key: str):
         for k in ["dark", "light"]:
             self.remove_class(f"theme-{k}")
         if key != "jarvis":
             self.add_class(f"theme-{key}")
-            
+
         for screen in self.screen_stack:
             for k in ["dark", "light"]:
                 screen.remove_class(f"theme-{k}")
             if key != "jarvis":
                 screen.add_class(f"theme-{key}")
-    
+
         config["theme"] = key
         save_config(config)
 
     # SYSINFO TICK
-
     @work(thread=True)
     def tick_sysinfo(self):
         self._tick_count += 1
         time_str = datetime.now().strftime("%H:%M:%S")
 
-        # battery + memory every 5 seconds
         if self._tick_count % 5 == 1:
             self._cached_batt = get_battery()
             self._cached_mem  = get_memory()
-
-        # network speed every second
 
         text = (
             f"[ {time_str} ]\n\n"
@@ -198,7 +181,6 @@ class TermuxDashboard(App):
         )
         self.call_from_thread(self.query_one("#sys-info", Static).update, text)
 
-        # alert pulse when battery < 20%
         if self._tick_count % 5 == 0:
             try:
                 pct = int(self._cached_batt.split('%')[0].strip()) if "%" in self._cached_batt else 100
@@ -216,7 +198,6 @@ class TermuxDashboard(App):
                     self.call_from_thread(self.query_one("#sys-info-box").remove_class, "alert")
             else:
                 self.call_from_thread(self.query_one("#sys-info-box").remove_class, "alert")
-        
 
     # WEATHER
     @work(thread=True)
@@ -231,7 +212,6 @@ class TermuxDashboard(App):
             weather = "Weather unavailable"
         self.call_from_thread(self.query_one("#weather", Static).update, weather)
 
-    
     # BUTTON HANDLER
     def on_button_pressed(self, event: Button.Pressed):
         bid = str(event.button.id)
@@ -260,8 +240,6 @@ class TermuxDashboard(App):
         elif bid == "app-github":
             self.app.push_screen(RepoExploreScreen())
 
-
-
     # INPUT HANDLER
     def on_input_submitted(self, event: Input.Submitted):
         val = event.value.strip()
@@ -274,7 +252,6 @@ class TermuxDashboard(App):
         elif event.input.id == "cmd-input":
             self.run_home_shell(val); event.input.clear()
 
-        
     # WORKERS
     @work(thread=True)
     def run_home_cmd(self, cmd, msg):
@@ -332,7 +309,6 @@ class TermuxDashboard(App):
         w_header(cfg['name'])
         self.call_from_thread(rlog.write, Text("─" * 40, "dim #1a1a3e"))
 
-        # special: speedtest
         if cfg.get('special') == 'speedtest':
             w_raw("⏳ Running speedtest, please wait (~30s)...")
             result = run_speedtest()

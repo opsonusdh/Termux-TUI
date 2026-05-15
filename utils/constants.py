@@ -1,6 +1,5 @@
-
-import os 
-from utils import *
+import os
+from utils import VERSION
 
 def _make_splash(version): 
 	inner_width=38 
@@ -27,11 +26,11 @@ def _make_splash(version):
 		"  ║                                      ║\n"
 		"  ╚══════════════════════════════════════╝\n"
 
-	) 
+	)
 
-SPLASH=_make_splash(VERSION) 
+SPLASH=_make_splash(VERSION)
 
-# CONSTANTS 
+# CONSTANTS
 BASIC_COMMANDS= {
 	'ls',
 	'rm',
@@ -212,7 +211,7 @@ TOOLS=[ {
 		"steps":["pkg install git -y"]
 	}
 
-] 
+]
 
 CAT_STYLE= {
 	"Reverse Eng": "bold magenta",
@@ -303,10 +302,7 @@ SYSTEM_CMDS=[
 CONFIG_PATH=os.path.expanduser(".termux_tui_config.json")
 
 
-
-
-# CSS 
-
+# CSS
 CSS_SPLASH_SCREEN="""
  SplashScreen {
 	align: center middle;
@@ -585,9 +581,9 @@ Tab.-active {
 }
 
 #app-github {
-    background: #1a1a1a;
+	background: #1a1a1a;
 	color: #e0e0e0;
-	 border: tall #e0e0e0;
+	border: tall #e0e0e0;
 }
 
 #app-github:hover {
@@ -945,4 +941,3 @@ Tab.-active {
 	color: #000000; 
 }
 """
-
