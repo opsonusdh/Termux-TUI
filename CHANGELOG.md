@@ -3,12 +3,15 @@
 All notable changes to Termux-TUI will be documented here.
 
 ---
-## [2.7.0] - current
+## [2.7.2] - current
 
 ### Added
+
 - Files `__init__.py` in directory apps and app_utils - cause not error if user run termux-tui
+- Another app called Github
 
 ### Changed
+
 - `utils/__init__.py` - change input version for source of truth
 - `utils/constants.py` - change import version to source of truth
 - the file structure of source code is changed to make the code more distributed and easily readable.
