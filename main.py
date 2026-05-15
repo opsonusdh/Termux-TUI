@@ -17,6 +17,7 @@ from utils.apps.dialer import DialerScreen
 from utils.apps.file_manager import FileBrowserScreen
 from utils.apps.music_player import MusicPlayerScreen
 from utils.apps.ytmp3 import YTmp3Screen
+from utils.apps.github_repo_finder import RepoExploreScreen
 
 
 # Loading Config
@@ -150,6 +151,7 @@ class TermuxDashboard(App):
                     yield Button("🎵 Music Player", id="app-music",  classes="apps")
                     yield Button("📞 Dialer",       id="app-dialer", classes="apps")
                     yield Button("▶ YTmp3",         id="app-ytmp3",  classes="apps")
+                    yield Button("🌍 GitHub",       id="app-github",  classes="apps")
 
         yield Footer()
 
@@ -255,6 +257,8 @@ class TermuxDashboard(App):
             self.app.push_screen(DialerScreen())
         elif bid == "app-ytmp3":
             self.app.push_screen(YTmp3Screen())
+        elif bid == "app-github":
+            self.app.push_screen(RepoExploreScreen())
 
 
 

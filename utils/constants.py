@@ -1,6 +1,6 @@
 import os 
 
-VERSION="2.6.1"
+VERSION="2.7.2"
 
 def _make_splash(version): 
 	inner_width=38 
@@ -584,6 +584,17 @@ Tab.-active {
 	color: #000000;
 }
 
+#app-github {
+    background: #1a1a1a;
+	color: #e0e0e0;
+	 border: tall #e0e0e0;
+}
+
+#app-github:hover {
+	 background: #e0e0e0;
+	color: #000000;
+}
+
 /* ── DARK theme ── */
 .theme-dark Screen {
 	background: #111116;
@@ -923,5 +934,15 @@ Tab.-active {
 	color: #000000;
 }
 
+.theme-light #app-github {
+	background: hsl(0, 0%, 88%); 
+	color: #333333; 
+	border: tall #333333; 
+}
+
+.theme-light #app-github:hover {
+	background: #666666; 
+	color: #000000; 
+}
 """
 

@@ -3,8 +3,10 @@
 All notable changes to Termux-TUI will be documented here.
 
 ---
-## [2.7.0] - current
+## [2.7.2] - current
 
+### Added
+- Another app called Github
 ### Changed
 - the file structure of source code is changed to make the code more distributed and easily readable.
 - the current file structure is:
