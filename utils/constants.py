@@ -1,5 +1,6 @@
-import os
-from __init__ import *
+
+import os 
+from utils import *
 
 def _make_splash(version): 
 	inner_width=38 

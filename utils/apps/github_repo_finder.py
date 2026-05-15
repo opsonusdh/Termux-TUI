@@ -469,21 +469,21 @@ class RepoExploreScreen(Screen):
             with Horizontal(id="repo-header"):
                 yield Button("← Back", id="repo-back")
                 yield Static("🌍 GitHub", id="repo-title")
-                yield Button(self.REGION_LABELS[self._active_region], id="repo-region")
+                yield Button(REGION_LABELS[self._active_region], id="repo-region")
 
             yield Static("Filters", id="repo-filters-label")
 
             yield Static("Time", classes="filter-label")
 
             with HorizontalScroll(id="repo-time-scroll"):
-                for key, label in self.TIME_FILTERS:
+                for key, label in TIME_FILTERS:
                     classes = "repo-time-chip active" if key == self._active_time else "repo-time-chip"
                     yield Button(label, id=f"repo-time-{key}", classes=classes)
 
             yield Static("Categories", classes="filter-label")
 
             with HorizontalScroll(id="repo-category-scroll"):
-                for key, label in self.CATEGORY_FILTERS:
+                for key, label in CATEGORY_FILTERS:
                     classes = "repo-category-chip active" if key == self._active_category else "repo-category-chip"
                     yield Button(label, id=f"repo-category-{key}", classes=classes)
 
@@ -524,7 +524,7 @@ class RepoExploreScreen(Screen):
 
         # CATEGORY
         elif self._active_category != "all":
-            category_term = self.CATEGORY_TERMS.get(self._active_category, "")
+            category_term = CATEGORY_TERMS.get(self._active_category, "")
             if category_term:
                 parts.append(category_term)
                 parts.append("in:name,description,readme")
@@ -533,8 +533,8 @@ class RepoExploreScreen(Screen):
             parts.append("stars:>0")
 
         # TIME
-        if self._active_time in self.TIME_WINDOWS:
-            days = self.TIME_WINDOWS[self._active_time]
+        if self._active_time in TIME_WINDOWS:
+            days = TIME_WINDOWS[self._active_time]
 
             # "year" now means all time
             if days != 365:
@@ -551,7 +551,7 @@ class RepoExploreScreen(Screen):
         if self._active_region == "world":
             return True
         loc = (location or "").lower()
-        for key in self.REGION_KEYWORDS.get(self._active_region, []):
+        for key in REGION_KEYWORDS.get(self._active_region, []):
             if key in loc:
                 return True
         return False
@@ -736,7 +736,7 @@ class RepoExploreScreen(Screen):
             self.query_one(
                 "#repo-region",
                 Button
-            ).label = self.REGION_LABELS[self._active_region]
+            ).label = REGION_LABELS[self._active_region]
         except Exception:
             pass
 
@@ -753,8 +753,8 @@ class RepoExploreScreen(Screen):
             return
 
         if bid == "repo-region":
-            current = self.REGION_ORDER.index(self._active_region)
-            self._active_region = self.REGION_ORDER[(current + 1) % len(self.REGION_ORDER)]
+            current = REGION_ORDER.index(self._active_region)
+            self._active_region = REGION_ORDER[(current + 1) % len(REGION_ORDER)]
             self._sync_active_chips()
             self.refresh_results(reset=True)
             return

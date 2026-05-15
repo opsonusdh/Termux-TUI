@@ -3,7 +3,7 @@
 All notable changes to Termux-TUI will be documented here.
 
 ---
-## [2.7.2] - current
+## [2.7.3] - current
 
 ### Added
 
@@ -46,6 +46,8 @@ Termux-TUI
     └── helpers.py
 
 ```
+### Fixed
+- bug fixes in github repo finder
 
 ## [2.6.1]
 
