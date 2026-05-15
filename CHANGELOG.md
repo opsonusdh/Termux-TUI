@@ -6,8 +6,14 @@ All notable changes to Termux-TUI will be documented here.
 ## [2.7.3] - current
 
 ### Added
+
+- Files `__init__.py` in directory apps and app_utils - cause not error if user run termux-tui
 - Another app called Github
+
 ### Changed
+
+- `utils/__init__.py` - change input version for source of truth
+- `utils/constants.py` - change import version to source of truth
 - the file structure of source code is changed to make the code more distributed and easily readable.
 - the current file structure is:
 ```
@@ -19,12 +25,15 @@ Termux-TUI
 ├── README.md
 ├── SECURITY.md
 ├── assets
+├── __main__.py
 ├── main.py
 ├── requirements.txt
 └── utils
     ├── __init__.py
     ├── apps
+    │   ├── __init__.py
     │   ├── app_utils
+    │   │   ├── __init__.py
     │   │   ├── dialer_utils.py
     │   │   ├── file_manager_utils.py
     │   │   ├── music_player_utils.py
