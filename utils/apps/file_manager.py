@@ -7,7 +7,7 @@ from rich.text import Text
 import subprocess, os, time
 
 from utils.apps.app_utils.file_manager_utils import *
-from utils.helpers import load_config
+from utils.helpers import load_config, fmt_size
 
 
 class FileBrowserScreen(Screen):
@@ -146,4 +146,3 @@ class FileBrowserScreen(Screen):
         elif os.path.isfile(target):
             self.open_file(target)
         event.input.clear()
-        
