@@ -33,11 +33,15 @@ class SplashScreen(Screen):
         yield Static("[ PRESS ANY KEY TO SKIP ]", id="splash-sub")
 
     def on_mount(self):
+        self._diagnosis_done = False
         self.run_diagnosis()
 
 # IMPORTANT: Please do not enable this. Because that will skip the diagnosis
 #    def on_key(self):
 #        self.dismiss()
+    def on_key(self, event) -> None:
+        if self._diagnosis_done:
+            self.dismiss()
         
     @work(thread=True)
     def run_diagnosis(self):
@@ -46,6 +50,7 @@ class SplashScreen(Screen):
         subprocess.run("termux-call-log",          shell=True, capture_output=True)
         subprocess.run("termux-contact-list",      shell=True, capture_output=True)
         subprocess.run("termux-telephony-cellinfo",shell=True, capture_output=True)
+        self._diagnosis_done = True
         self.app.call_from_thread(self.dismiss)
 
 
@@ -58,7 +63,6 @@ class ThemeCommand(Provider):
     ]
 
     async def discover(self) -> Hits:
-        """Shown when palette opens with no query."""
         for label, key in self._themes:
             yield DiscoveryHit(
                 display=label,
@@ -67,7 +71,6 @@ class ThemeCommand(Provider):
             )
 
     async def search(self, query: str) -> Hits:
-        """Shown when user types."""
         for label, key in self._themes:
             if query.lower() in label.lower():
                 yield Hit(
@@ -168,11 +171,14 @@ class TermuxDashboard(App):
         if key != "jarvis":
             self.add_class(f"theme-{key}")
             
-        for screen in self.screen_stack:
-            for k in ["dark", "light"]:
-                screen.remove_class(f"theme-{k}")
-            if key != "jarvis":
-                screen.add_class(f"theme-{key}")
+        for screen in list(self.screen_stack):
+            try:
+                for k in ["dark", "light"]:
+                    screen.remove_class(f"theme-{k}")
+                if key != "jarvis":
+                    screen.add_class(f"theme-{key}")
+            except Exception:
+                pass
     
         config["theme"] = key
         save_config(config)
