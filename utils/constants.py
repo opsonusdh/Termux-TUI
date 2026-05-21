@@ -1,6 +1,5 @@
-
 import os 
-from utils import *
+from utils import VERSION
 
 def _make_splash(version): 
 	inner_width=38 
@@ -587,11 +586,11 @@ Tab.-active {
 #app-github {
     background: #1a1a1a;
 	color: #e0e0e0;
-	 border: tall #e0e0e0;
+	border: tall #e0e0e0;
 }
 
 #app-github:hover {
-	 background: #e0e0e0;
+	background: #e0e0e0;
 	color: #000000;
 }
 
@@ -945,4 +944,3 @@ Tab.-active {
 	color: #000000; 
 }
 """
-
