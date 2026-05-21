@@ -8,7 +8,7 @@ def run_cmd(*args, timeout=10):
 
 def call_number(number):
     try:
-        subprocess.run(['termux-telephony-call', number], shell=True)
+        subprocess.run(['termux-telephony-call', number])
     except Exception:
         pass
 
