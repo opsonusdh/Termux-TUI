@@ -3,6 +3,34 @@
 All notable changes to Termux-TUI will be documented here.
 
 ---
+
+## [Unreleased]
+
+### Fixed
+
+**`main.py`**
+- `SplashScreen.on_key` was commented out — "PRESS ANY KEY TO SKIP" label was non-functional. Restored handler with a `_diagnosis_done` guard so the splash can only be dismissed after diagnosis completes, not during
+- `set_theme()` iterated `self.screen_stack` without a guard — could raise an exception if a screen had already been dismissed (e.g. SplashScreen). Now iterates `list(self.screen_stack)` inside a `try/except`
+
+**`utils/constants.py`**
+- `from utils import *` inside `utils/constants.py` caused a circular self-import — replaced with the explicit `from utils import VERSION`
+- CSS `#app-github` and `#app-github:hover` had a stray leading space before `border:` and `background:` respectively — properties were silently ignored by Textual's CSS parser
+
+**`utils/apps/file_manager.py`**
+- `fmt_size()` was called inside `list_directory()` and `open_file()` but was never imported — caused `NameError` whenever a file entry was rendered or a large file was opened. Added `fmt_size` to the `from utils.helpers import` line
+
+**`utils/apps/app_utils/dialer_utils.py`**
+- `call_number()` passed a list to `subprocess.run()` while also setting `shell=True` — these two modes are mutually exclusive; with a list, `shell=True` is ignored and the call silently fails. Removed `shell=True`
+
+**`utils/apps/music_player.py`**
+- `_play_idx()` checked `threading.get_ident() == self.app._thread_id` to decide whether to call `update_ui()` directly or via `call_from_thread()` — `_thread_id` is a private Textual internal not part of the public API and can change across versions. Replaced with an unconditional `call_from_thread(update_ui)`
+- Removed `import threading` which became unused after the above fix
+
+**`__main__.py`**
+- Running the project as a package (`python -m Termux-TUI-main`) failed because `import main` could not resolve without the package directory on `sys.path`. Added `sys.path.insert(0, os.path.dirname(__file__))` before the import
+
+---
+
 ## [2.7.3] - current
 
 ### Added
@@ -32,16 +60,16 @@ Termux-TUI
     ├── __init__.py
     ├── apps
     │   ├── __init__.py
-    │   ├── app_utils
-    │   │   ├── __init__.py
-    │   │   ├── dialer_utils.py
-    │   │   ├── file_manager_utils.py
-    │   │   ├── music_player_utils.py
-    │   │   └── ytmp3_utils.py
-    │   ├── dialer.py
-    │   ├── file_manager.py
-    │   ├── music_player.py
-    │   └── ytmp3.py
+    │   ├── app_utils
+    │   │   ├── __init__.py
+    │   │   ├── dialer_utils.py
+    │   │   ├── file_manager_utils.py
+    │   │   ├── music_player_utils.py
+    │   │   └── ytmp3_utils.py
+    │   ├── dialer.py
+    │   ├── file_manager.py
+    │   ├── music_player.py
+    │   └── ytmp3.py
     ├── constants.py
     └── helpers.py
 

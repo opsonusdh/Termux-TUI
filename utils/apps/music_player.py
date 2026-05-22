@@ -3,7 +3,7 @@ from textual.screen import Screen
 from textual.widgets import Button, Static, Input, Switch
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual import work
-import os, random, threading
+import os, random
 
 from utils.apps.app_utils.music_player_utils import *
 from utils.helpers import to_mmss, load_config
@@ -284,10 +284,7 @@ class MusicPlayerScreen(Screen):
             self.query_one("#mp-status",          Static).update("▶")
             self.query_one("#mp-playpause",       Button).label = "| |"
             self.query_one("#mp-nowplaying-bar",  Static).update(f"♫ {name}")
-        if threading.get_ident() == self.app._thread_id:
-            update_ui()
-        else:
-            self.app.call_from_thread(update_ui)
+        self.app.call_from_thread(update_ui)
         
 
     def _advance(self):
