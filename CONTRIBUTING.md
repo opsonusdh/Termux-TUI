@@ -55,7 +55,7 @@ The `cat` field must exactly match one of these values (case-sensitive):
 | `Utilities` | Green |
 | `Package Manager` | Green |
 
-> ⚠️ If `cat` doesn't match exactly, the tool will render without a color. Capitalization matters.
+>  If `cat` doesn't match exactly, the tool will render without a color. Capitalization matters.
 
 ### Example
 
@@ -78,7 +78,7 @@ System commands live in `SYSTEM_CMDS` inside `utils/constants.py`. Each entry is
 ```python
 {
     "id":      "unique-id",
-    "name":    "🔧 Display Name",
+    "name":    "Display Name",
     "cmd":     "shell command to run",
     "json":    True,   # True if the output is JSON (auto-parsed as KEY ▸ VALUE)
                        # False if plain text output

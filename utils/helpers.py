@@ -33,9 +33,9 @@ def get_battery():
         pct    = d.get('percentage', 'N/A')
         status = d.get('status', '')
         temp   = d.get('temperature', 0)
-        s = f"{pct}%{' ⚡' if status == 'CHARGING' else ''}"
+        s = f"{pct}%{' 󱐋' if status == 'CHARGING' else ''}"
         if isinstance(temp, (int, float)) and temp >= 40:
-            s += f"  🔥{temp}°C"
+            s += f"  {temp}°C"
         return s
     except:
         return "N/A"

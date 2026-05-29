@@ -45,7 +45,7 @@ class BrowshScreen(Screen):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="browsh-box"):
-            yield Static("◈  BROWSH  BROWSER  ◈", id="browsh-title")
+            yield Static("󰇙  BROWSH  BROWSER  󰇙", id="browsh-title")
             yield Static(
                 "Text-based web browser\nOpens in a new Termux terminal",
                 id="browsh-desc"
@@ -58,7 +58,7 @@ class BrowshScreen(Screen):
                 yield Button("Go", id="browsh-go")
             yield Static("", id="browsh-status")
             yield Static(
-                "✗ browsh not found. Install: pkg install browsh",
+                " browsh not found. Install: pkg install browsh",
                 id="browsh-not-found"
             )
             yield Button("← Back", id="browsh-back")
@@ -85,7 +85,7 @@ class BrowshScreen(Screen):
         cmd = f"browsh {url}" if url else "browsh"
         with self.app.suspend():
             subprocess.run(cmd, shell=True)
-        self.query_one("#browsh-status", Static).update("◈ Returned from browsh")
+        self.query_one("#browsh-status", Static).update("󰇙 Returned from browsh")
 
     def on_button_pressed(self, event: Button.Pressed):
         bid = str(event.button.id)

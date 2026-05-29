@@ -4,8 +4,11 @@ All notable changes to Termux-TUI will be documented here.
 
 ---
 
-## [Unreleased]
+## [2.8.1] - Current
 
+### Added
+- `Nerdfont` fonts and icons insted on emogies
+- `Browsh` app
 ### Fixed
 
 **`main.py`**
@@ -31,7 +34,7 @@ All notable changes to Termux-TUI will be documented here.
 
 ---
 
-## [2.7.3] - current
+## [2.7.3]
 
 ### Added
 
@@ -152,7 +155,7 @@ Termux-TUI
 ### Added
 - Splash screen on launch with animated intro
 - Command Palette. press `Ctrl+P` to search and jump to any feature
-- 3 main themes × 19 system themes = 57 total theme combinations
+- 3 main themes  19 system themes = 57 total theme combinations
 - `termux-app-store` added to Packages tab (offline-first TUI package manager)
 - `fmt_size` helper for human-readable file sizes
 - Speedtest now handled via dedicated `run_speedtest()` helper with 120s timeout and parsed KEY ▸ VALUE output

@@ -42,7 +42,7 @@ class OrionApiKeyScreen(Screen):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="api-box"):
-            yield Static("◈  ORION  ◈\nGemini API Key Setup", id="api-title")
+            yield Static("󰇙  ORION  󰇙\nGemini API Key Setup", id="api-title")
             yield Static(
                 "Orion uses Google Gemini.\n"
                 "Get a free key at: aistudio.google.com\n"
@@ -56,7 +56,7 @@ class OrionApiKeyScreen(Screen):
                 yield Button("+ Add", id="api-add")
             yield Static("", id="api-status")
             with Horizontal(id="api-btns"):
-                yield Button("✅ Save & Continue", id="api-save")
+                yield Button(" Save & Continue", id="api-save")
 
     def _refresh_keys(self):
         self._key_gen += 1
@@ -70,8 +70,8 @@ class OrionApiKeyScreen(Screen):
             masked = key[:12] + "..." + key[-4:] if len(key) > 16 else key
             row    = Horizontal(classes="api-key-row")
             scroll.mount(row)
-            row.mount(Static(f"  🔑 {masked}", classes="api-key-label"))
-            row.mount(Button("✕", id=f"apidel-{gen}-{i}", classes="api-key-del"))
+            row.mount(Static(f"  󰌆 {masked}", classes="api-key-label"))
+            row.mount(Button("", id=f"apidel-{gen}-{i}", classes="api-key-del"))
             row._key_idx = i
 
     def on_button_pressed(self, event: Button.Pressed):
@@ -97,25 +97,25 @@ class OrionApiKeyScreen(Screen):
             self._refresh_keys()
             self.query_one("#api-input", Input).clear()
             self.query_one("#api-status", Static).update(
-                f"✅ {len(self._keys)} key(s) added"
+                f" {len(self._keys)} key(s) added"
             )
 
     def _do_save(self):
         if not self._keys:
             self.query_one("#api-status", Static).update(
-                "✗ Add at least one API key"
+                " Add at least one API key"
             )
             return
         ok = save_api_keys(self._keys)
         if ok:
             self.query_one("#api-status", Static).update(
-                f"✅ Saved {len(self._keys)} key(s)"
+                f" Saved {len(self._keys)} key(s)"
             )
             time.sleep(0.6)
             self.dismiss(True)
         else:
             self.query_one("#api-status", Static).update(
-                "✗ Failed to save. Check permissions."
+                " Failed to save. Check permissions."
             )
 
 
@@ -132,14 +132,14 @@ class OrionInstallScreen(Screen):
     def compose(self) -> ComposeResult:
         with Vertical(id="inst-box"):
             if self._mode == "install":
-                yield Static("◈  ORION  ◈\nInstalling Termux-AI...", id="inst-title")
+                yield Static("󰇙  ORION  󰇙\nInstalling Termux-AI...", id="inst-title")
                 yield Static(
                     "Orion AI is not installed.\n"
                     "This will clone the repo and run setup.sh",
                     id="inst-desc"
                 )
             else:
-                yield Static("◈  ORION  ◈\nVoice Service (Termux-STT)", id="inst-title")
+                yield Static("󰇙  ORION  󰇙\nVoice Service (Termux-STT)", id="inst-title")
                 yield Static(
                     "Install voice input & wake-word detection?\n"
                     "Requires mpv, edge-tts and more.",
@@ -160,10 +160,10 @@ class OrionInstallScreen(Screen):
             yield RichLog(id="inst-log", markup=True)
             yield Static("", id="inst-status")
             with Horizontal(id="inst-btns"):
-                yield Button("▶ Install Orion" if self._mode == "install"
-                             else "▶ Install Voice", id="inst-go")
+                yield Button(" Install Orion" if self._mode == "install"
+                             else " Install Voice", id="inst-go")
                 if self._mode != "install":
-                    yield Button("✕ Skip", id="inst-skip-voice")
+                    yield Button(" Skip", id="inst-skip-voice")
 
     def on_button_pressed(self, event: Button.Pressed):
         bid = str(event.button.id)
@@ -208,7 +208,7 @@ class OrionInstallScreen(Screen):
             (f"git clone https://github.com/opsonusdh/Termux-AI {ORION_DIR}", "Cloning Orion..."),
             (f"cd {ORION_DIR} && bash setup.sh",                           "Running setup.sh..."),
         ]:
-            status(f"⏳ {msg}")
+            status(f"󱎫 {msg}")
             w(f"$ {cmd}", "bold yellow")
             proc = subprocess.Popen(
                 cmd, shell=True,
@@ -218,11 +218,11 @@ class OrionInstallScreen(Screen):
                 w(line.rstrip())
             proc.wait()
             if proc.returncode != 0:
-                status("✗ Installation failed")
+                status(" Installation failed")
                 w("Installation failed.", "bold red")
                 return
 
-        status("✅ Orion installed!")
+        status(" Orion installed!")
         w("Done.", "bold green")
         time.sleep(0.5)
         self.app.call_from_thread(self.dismiss, True)
@@ -241,7 +241,7 @@ class OrionInstallScreen(Screen):
             ("pkg install -y mpv",           "Installing mpv..."),
             ("pip install edge-tts --quiet", "Installing edge-tts..."),
         ]:
-            status(f"⏳ {msg}")
+            status(f"󱎫 {msg}")
             w(f"$ {cmd}", "bold yellow")
             proc = subprocess.Popen(
                 cmd, shell=True,
@@ -251,7 +251,7 @@ class OrionInstallScreen(Screen):
                 w(line.rstrip())
             proc.wait()
 
-        status("⏳ Cloning Termux-STT...")
+        status("󱎫 Cloning Termux-STT...")
         w(f"$ git clone https://github.com/opsonusdh/Termux-STT {STT_DIR}", "bold yellow")
         proc = subprocess.Popen(
             f"git clone https://github.com/opsonusdh/Termux-STT {STT_DIR}",
@@ -261,7 +261,7 @@ class OrionInstallScreen(Screen):
             w(line.rstrip())
         proc.wait()
 
-        status(f"⏳ Running STT setup (model: {model_choice})...")
+        status(f"󱎫 Running STT setup (model: {model_choice})...")
         w(f"$ bash {STT_DIR}/setup.sh  [model={model_choice}]", "bold yellow")
         proc = subprocess.Popen(
             f"bash {STT_DIR}/setup.sh",
@@ -281,7 +281,7 @@ class OrionInstallScreen(Screen):
 
         CONFIG["voice_enabled"] = True
         save_orion_config(CONFIG)
-        status("✅ Voice installed!")
+        status(" Voice installed!")
         w("Done.", "bold green")
         time.sleep(0.5)
         self.app.call_from_thread(self.dismiss, True)
@@ -298,18 +298,18 @@ class OrionScreen(Screen):
 
     TOOLS = [
         ("run_code",        "💻"),
-        ("save_memory",     "💾"),
+        ("save_memory",     "󰆓"),
         ("retrieve_memory", "🔍"),
-        ("read_file",       "📄"),
+        ("read_file",       "󰈙"),
         ("write_file",      "✏️"),
-        ("web_scrape",      "🌐"),
-        ("sleep_mode",      "😴"),
+        ("web_scrape",      "󰖟"),
+        ("sleep_mode",      ""),
     ]
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="orion-header"):
             yield Button("← Back",   id="orion-back")
-            yield Static("◈  ORION  AI  ◈", id="orion-title")
+            yield Static("󰇙  ORION  AI  󰇙", id="orion-title")
             yield Button("API Keys", id="orion-apikey-btn")
 
         with Horizontal(id="orion-body"):
@@ -349,7 +349,7 @@ class OrionScreen(Screen):
         self._start_orion()
         self.set_interval(3, self._update_stats)
         self._update_stats()
-        self._write_log("◈  ORION  AI  ◈", "bold cyan")
+        self._write_log("󰇙  ORION  AI  󰇙", "bold cyan")
         self._write_log("Autonomous terminal agent — powered by Gemini", "dim #444466")
         self._write_log("─" * 50, "dim #1a1a3e")
 
@@ -385,13 +385,13 @@ class OrionScreen(Screen):
                  f'bash -c "cd {ORION_DIR} && python -u core; read"'],
             )
             self._is_running = True
-            self._write_log("◈ Orion launched in external terminal", "bold cyan")
+            self._write_log("󰇙 Orion launched in external terminal", "bold cyan")
             self._write_log("Use the terminal window to interact with Orion.", "dim #444466")
             self.query_one("#orion-thinking-bar", Static).update(
                 "●  Orion running in terminal"
             )
         except Exception as e:
-            self._write_log(f"✗ Failed to launch: {e}", "bold red")
+            self._write_log(f" Failed to launch: {e}", "bold red")
 
     # ── output handler ────────────────────────────────────────────
 
@@ -426,17 +426,17 @@ class OrionScreen(Screen):
         if "[Thinking]" in clean:
             self.app.call_from_thread(
                 self.query_one("#orion-thinking-bar", Static).update,
-                "◉  Orion is thinking..."
+                "  Orion is thinking..."
             )
         elif "[Listening...]" in clean:
             self.app.call_from_thread(
                 self.query_one("#orion-thinking-bar", Static).update,
-                "◎  Listening..."
+                "  Listening..."
             )
         elif re.match(r'YOU\s*(\(Voice\))?\s*[>▸]\s*\S', clean):
             self.app.call_from_thread(
                 self.query_one("#orion-thinking-bar", Static).update,
-                "⏵  Input received"
+                "  Input received"
             )
         elif re.match(r'AI\s*[>▸]', clean):
             self.app.call_from_thread(
@@ -501,14 +501,14 @@ class OrionScreen(Screen):
 
     def _send_message(self, text):
         if not self._is_running or not self._proc:
-            self._write_log("✗ Orion is not running.", "bold red")
+            self._write_log(" Orion is not running.", "bold red")
             return
         try:
             self._write_log(f"YOU > {text}", "bold cyan")
             self._proc.stdin.write(text + "\n")
             self._proc.stdin.flush()
         except Exception as e:
-            self._write_log(f"✗ {e}", "bold red")
+            self._write_log(f" {e}", "bold red")
 
     # ── event handlers ────────────────────────────────────────────
 
@@ -541,7 +541,7 @@ class OrionLaunchScreen(Screen):
     CSS = ORION_LAUNCH_CSS
 
     def compose(self) -> ComposeResult:
-        yield Static("◈  ORION  ◈\nChecking...", id="launch-msg")
+        yield Static("󰇙  ORION  󰇙\nChecking...", id="launch-msg")
 
     def on_mount(self):
         self.check_and_launch()

@@ -23,13 +23,13 @@ class MusicPlayerSettingsScreen(Screen):
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="set-header"):
-            yield Static("◈  SETTINGS  ◈", id="set-title")
-            yield Button("✕ Close", id="set-close")
+            yield Static("󰇙  SETTINGS  󰇙", id="set-title")
+            yield Button(" Close", id="set-close")
 
         with VerticalScroll(id="set-scroll"):
             yield Static("▸ SCAN FOLDERS", classes="set-section")
             for d in self._config.get("music_dirs", DEFAULT_MUSIC_DIRS):
-                yield Button(f"  📁 {d}", classes="set-dir-btn", id=f"setdir-{abs(hash(d))}")
+                yield Button(f"   {d}", classes="set-dir-btn", id=f"setdir-{abs(hash(d))}")
             with Horizontal(id="add-or-delete"):
                 yield Button("+ Add Folder", id="set-add-dir")
                 yield Button("- Delete", id="set-delete-dir")
@@ -67,7 +67,7 @@ class MusicPlayerSettingsScreen(Screen):
                     self._config['music_dirs'].append(path)
                     scroll = self.query_one("#set-scroll", VerticalScroll)
                     scroll.mount(
-                        Button(f"  📁 {path}", classes="set-dir-btn",
+                        Button(f"   {path}", classes="set-dir-btn",
                                id=f"setdir-{abs(hash(path))}"),
                         before=self.query_one("#add-or-delete")
                     )
@@ -79,7 +79,7 @@ class MusicPlayerSettingsScreen(Screen):
                 inp.display = True
                 inp.focus()
                 # also change button label to hint
-                event.button.label = "✓ Confirm"
+                event.button.label = " Confirm"
                 
         elif bid.startswith("setmode-"):
             mode = bid[8:]
@@ -128,7 +128,7 @@ class MusicPlayerSettingsScreen(Screen):
             self._config['music_dirs'].append(path)
             scroll = self.query_one("#set-scroll", VerticalScroll)
             scroll.mount(
-                Button(f"  📁 {path}", classes="set-dir-btn",
+                Button(f"   {path}", classes="set-dir-btn",
                        id=f"setdir-{abs(hash(path))}"),
                 before=self.query_one("#add-or-delete")
             )
@@ -180,9 +180,9 @@ class MusicPlayerScreen(Screen):
                 yield Static("░" * 20, id="mp-bar")
                 yield Static("0:00", id="mp-time-dur")
             with Horizontal(id="mp-controls"):
-                yield Button("⏮ ",   id="mp-prev")
-                yield Button("▶",   id="mp-playpause")
-                yield Button("⏭ ",   id="mp-next")
+                yield Button("󰒮 ",   id="mp-prev")
+                yield Button("",   id="mp-playpause")
+                yield Button("󰒭 ",   id="mp-next")
 
         # Bottom bar
         with Horizontal(id="mp-bottombar"):
@@ -206,7 +206,7 @@ class MusicPlayerScreen(Screen):
         self._all_songs = songs
         self.app.call_from_thread(
             self.query_one("#mp-nowplaying-bar", Static).update,
-            f"♫ {len(songs)} songs found"
+            f"󰎆 {len(songs)} songs found"
         )
 
     # tick: internal clock + periodic sync
@@ -245,7 +245,7 @@ class MusicPlayerScreen(Screen):
         bar  = "█" * pct + "░" * (width - pct)
         pos_s = to_mmss(pos)
         dur_s = to_mmss(dur) if self._dur_sec else "0:00"
-        emoji = "▶" if self._is_playing else "#"
+        emoji = "" if self._is_playing else "#"
 
         def update():
             self.query_one("#mp-bar",      Static).update(bar)
@@ -281,9 +281,9 @@ class MusicPlayerScreen(Screen):
         name = os.path.basename(path)
         def update_ui():
             self.query_one("#mp-track",          Static).update(name)
-            self.query_one("#mp-status",          Static).update("▶")
+            self.query_one("#mp-status",          Static).update("")
             self.query_one("#mp-playpause",       Button).label = "| |"
-            self.query_one("#mp-nowplaying-bar",  Static).update(f"♫ {name}")
+            self.query_one("#mp-nowplaying-bar",  Static).update(f"󰎆 {name}")
         self.app.call_from_thread(update_ui)
         
 
@@ -334,7 +334,7 @@ class MusicPlayerScreen(Screen):
         gen = self._nav_gen
         for i, path in enumerate(filtered):
             results.mount(Button(
-                f"  🎵  {os.path.basename(path)}",
+                f"  󰎆  {os.path.basename(path)}",
                 id=f"mpres-{gen}-{i}",
                 classes="mp-result"
             ))
@@ -373,13 +373,13 @@ class MusicPlayerScreen(Screen):
             if self._is_playing:
                 mp_run('pause')
                 self._is_playing = False
-                event.button.label = "▶"
+                event.button.label = ""
                 self.query_one("#mp-status", Static).update("| |")
             elif self._pos_sec > 0:
                 mp_run('resume')
                 self._is_playing = True
                 event.button.label = "| |"
-                self.query_one("#mp-status", Static).update("▶  PLAYING")
+                self.query_one("#mp-status", Static).update("  PLAYING")
             else:
                 # nothing loaded — play first
                 if self._all_songs:

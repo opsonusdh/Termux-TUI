@@ -103,24 +103,24 @@ class TermuxDashboard(App):
         with TabbedContent():
 
             # HOME
-            with TabPane("🏠 Home"):
+            with TabPane(" Home"):
                 with Vertical():
                     with Horizontal(id="info-row"):
                         with Vertical(id="sys-info-box"):
                             yield Static("", id="sys-info")
-                        yield Static("⏳ Loading weather...", id="weather")
+                        yield Static("󱎫 Loading weather...", id="weather")
                     with Horizontal(id="recent"):
                         for prog in get_recent_programs():
                             yield Button(prog, classes="recent-btn")
                     with Horizontal(id="action-row"):
-                        yield Button("📦 Update",  id="update-btn",  variant="success")
-                        yield Button("⬇ Install",  id="install-btn", variant="primary")
+                        yield Button(" Update",  id="update-btn",  variant="success")
+                        yield Button("󰇚 Install",  id="install-btn", variant="primary")
                     yield Input(placeholder="Package name...",          id="pkg-input")
                     yield Input(placeholder="$ Enter any command...",   id="cmd-input")
                     yield Log(id="log-view")
 
             # PACKAGES 
-            with TabPane("📦 Packages"):
+            with TabPane(" Packages"):
                 with Vertical():
                     with VerticalScroll(id="pkg-scroll"):
                         for tool in TOOLS:
@@ -137,7 +137,7 @@ class TermuxDashboard(App):
                     yield RichLog(id="pkg-log", markup=True)
 
             # SYSTEM
-            with TabPane("⚙ System"):
+            with TabPane(" System"):
                 with Vertical():
                     with VerticalScroll(id="sys-scroll"):
                         rows = [SYSTEM_CMDS[i:i+3] for i in range(0, len(SYSTEM_CMDS), 3)]
@@ -149,15 +149,15 @@ class TermuxDashboard(App):
 
                     
             # APPS
-            with TabPane("🎮 Apps"):
+            with TabPane(" Apps"):
                 with Grid(id="apps-grid"):
-                    yield Button("📁 File Browser", id="app-files",  classes="apps")
-                    yield Button("🎵 Music Player", id="app-music",  classes="apps")
-                    yield Button("📞 Dialer",       id="app-dialer", classes="apps")
-                    yield Button("▶ YTmp3",         id="app-ytmp3",  classes="apps")
-                    yield Button("🌍 GitHub",       id="app-github",  classes="apps")
-                    yield Button("🌐 Browser", id="app-browser")
-                    yield Button("♐ Orion AI(coming soon)", id="app-orion")
+                    yield Button(" File Browser", id="app-files",  classes="apps")
+                    yield Button("󰎆 Music Player", id="app-music",  classes="apps")
+                    yield Button(" Dialer",       id="app-dialer", classes="apps")
+                    yield Button(" YTmp3",         id="app-ytmp3",  classes="apps")
+                    yield Button("󰭹 GitHub",       id="app-github",  classes="apps")
+                    yield Button("󰖟 Browser", id="app-browser")
+                    yield Button("󰒙 Orion AI(coming soon)", id="app-orion")
                     
 
         yield Footer()
@@ -214,7 +214,7 @@ class TermuxDashboard(App):
             except (ValueError, IndexError):
                 pct = 100
             try:
-                temp = float(self._cached_batt.split('°C')[0].split("🔥")[1].strip()) if "🔥" in self._cached_batt else 0
+                temp = float(self._cached_batt.split('°C')[0].split("")[1].strip()) if "" in self._cached_batt else 0
             except (ValueError, IndexError):
                 temp = 0
             if pct < 20 or temp >= 40:
@@ -246,7 +246,7 @@ class TermuxDashboard(App):
         bid = str(event.button.id)
 
         if bid == "update-btn":
-            self.run_home_cmd(["pkg", "update", "-y"], "📦 Running update...")
+            self.run_home_cmd(["pkg", "update", "-y"], " Running update...")
         elif bid == "install-btn":
             inp = self.query_one("#pkg-input", Input)
             inp.display = True; inp.focus()
@@ -281,7 +281,7 @@ class TermuxDashboard(App):
         if not val: return
 
         if event.input.id == "pkg-input":
-            self.run_home_cmd(["pkg", "install", val, "-y"], f"⬇ Installing {val}...")
+            self.run_home_cmd(["pkg", "install", val, "-y"], f"󰇚 Installing {val}...")
             event.input.clear(); event.input.display = False
 
         elif event.input.id == "cmd-input":
@@ -296,7 +296,7 @@ class TermuxDashboard(App):
         r = subprocess.run(cmd, capture_output=True, text=True)
         for line in (r.stdout + r.stderr).splitlines():
             self.call_from_thread(log.write_line, line)
-        self.call_from_thread(log.write_line, "✅ Done!")
+        self.call_from_thread(log.write_line, " Done!")
 
     @work(thread=True)
     def run_home_shell(self, cmd):
@@ -313,7 +313,7 @@ class TermuxDashboard(App):
         def w(text, style=""):
             self.call_from_thread(rlog.write, Text(text, style) if style else Text(text))
         self.call_from_thread(rlog.clear)
-        w(f"◈ Installing {tool['name']}", "bold cyan")
+        w(f"󰇙 Installing {tool['name']}", "bold cyan")
         w("─" * 36, "dim #1a1a3e")
         for i, step in enumerate(tool['steps']):
             w(f"\n[{i+1}/{len(tool['steps'])}] $ {step}", "bold yellow")
@@ -321,7 +321,7 @@ class TermuxDashboard(App):
             for line in (r.stdout + r.stderr).strip().splitlines():
                 w(f"  {line}", "dim green")
         w("\n" + "─" * 36, "dim #1a1a3e")
-        w(f"✅  {tool['name']} installed!", "bold green")
+        w(f"  {tool['name']} installed!", "bold green")
 
     @work(thread=True)
     def run_sys_cmd(self, cfg):
@@ -329,7 +329,7 @@ class TermuxDashboard(App):
         self.call_from_thread(rlog.clear)
 
         def w_header(text):
-            t = Text(); t.append(f"\n◈ {text}\n", "bold cyan")
+            t = Text(); t.append(f"\n󰇙 {text}\n", "bold cyan")
             self.call_from_thread(rlog.write, t)
 
         def w_kv(key, val):
@@ -347,7 +347,7 @@ class TermuxDashboard(App):
 
         # special: speedtest
         if cfg.get('special') == 'speedtest':
-            w_raw("⏳ Running speedtest, please wait (~30s)...")
+            w_raw("󱎫 Running speedtest, please wait (~30s)...")
             result = run_speedtest()
             for key, val in result.items():
                 w_kv(key, val)
@@ -380,9 +380,9 @@ class TermuxDashboard(App):
             else:
                 for line in out.splitlines(): w_raw(line)
         except subprocess.TimeoutExpired:
-            w_raw(f"⏱ Timed out after {cfg.get('timeout', 15)}s — command may need more permissions or is unavailable")
+            w_raw(f"󱎫 Timed out after {cfg.get('timeout', 15)}s — command may need more permissions or is unavailable")
         except Exception as e:
-            w_raw(f"✗ {e}")
+            w_raw(f" {e}")
 
 
 app = TermuxDashboard()

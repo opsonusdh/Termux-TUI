@@ -20,8 +20,8 @@ class YTmp3PlaylistScreen(Screen):
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="pl-header"):
-            yield Static("◈  PLAYLISTS  ◈", id="pl-title")
-            yield Button("✕ Close", id="pl-close")
+            yield Static("󰇙  PLAYLISTS  󰇙", id="pl-title")
+            yield Button(" Close", id="pl-close")
         with Horizontal(id="pl-new-row"):
             yield Input(placeholder="New playlist name...", id="pl-name-input")
             yield Button("+ Create", id="pl-create")
@@ -56,9 +56,9 @@ class YTmp3PlaylistScreen(Screen):
                 row.mount(info)
                 info.mount(Static(name, classes="pl-name"))
                 info.mount(Static(f"{len(tracks)} tracks", classes="pl-count"))
-                row.mount(Button("▶ Open",   id=f"plopen-{abs(hash(name))}",
+                row.mount(Button(" Open",   id=f"plopen-{abs(hash(name))}",
                                  classes="pl-open-btn"))
-                row.mount(Button("✕ Delete", id=f"pldel-{abs(hash(name))}",
+                row.mount(Button(" Delete", id=f"pldel-{abs(hash(name))}",
                                  classes="pl-del-btn"))
                 row._pl_name = name
             except Exception:
@@ -108,8 +108,8 @@ class YTSettingsScreen(Screen):
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="yts-header"):
-            yield Static("⚙  YT SETTINGS  ⚙", id="yts-title")
-            yield Button("✕ Close", id="yts-close")
+            yield Static("  YT SETTINGS  ", id="yts-title")
+            yield Button(" Close", id="yts-close")
         with VerticalScroll(id="yts-scroll"):
             yield Static("▸ TEMP DIRECTORY", classes="yts-section")
             yield Static("Where current / next / prev audio is cached between plays:", classes="yts-desc")
@@ -120,7 +120,7 @@ class YTSettingsScreen(Screen):
                 classes="yts-input"
             )
             yield Static("▸ DOWNLOAD DIRECTORY", classes="yts-section")
-            yield Static("Where ⬇ Save sends your MP3 files:", classes="yts-desc")
+            yield Static("Where 󰇚 Save sends your MP3 files:", classes="yts-desc")
             yield Input(
                 value=self._config.get("download_dir", DEFAULT_YT_DOWNLOAD_DIR),
                 placeholder=DEFAULT_YT_DOWNLOAD_DIR,
@@ -136,7 +136,7 @@ class YTSettingsScreen(Screen):
                 classes="yts-input"
             )
             with Horizontal(id="yts-btn-row"):
-                yield Button("✓ Save", id="yts-save")
+                yield Button(" Save", id="yts-save")
                 yield Button("↺ Reset Defaults", id="yts-reset")
 
     def on_mount(self):
@@ -210,8 +210,8 @@ class YTmp3Screen(Screen):
     def compose(self) -> ComposeResult:
         with Horizontal(id="yt-header"):
             yield Button("← Back",    id="yt-back")
-            yield Button("♫ Playlists", id="yt-pl-btn")
-            yield Button("⚙ Settings",  id="yt-settings-btn")
+            yield Button("󰎆 Playlists", id="yt-pl-btn")
+            yield Button(" Settings",  id="yt-settings-btn")
 
         with Horizontal(id="yt-searchbar"):
             yield Input(placeholder="🔍 Search YouTube...", id="yt-search")
@@ -228,10 +228,10 @@ class YTmp3Screen(Screen):
                 yield Static("░" * 20, id="yt-np-bar")
                 yield Static("0:00",   id="yt-np-dur")
             with Horizontal(id="yt-controls"):
-                yield Button("⏮",        id="yt-prev")
-                yield Button("▶",        id="yt-playpause")
-                yield Button("⏭",        id="yt-next")
-                yield Button("⬇ Save",   id="yt-dl-current")
+                yield Button("󰒮",        id="yt-prev")
+                yield Button("",        id="yt-playpause")
+                yield Button("󰒭",        id="yt-next")
+                yield Button("󰇚 Save",   id="yt-dl-current")
             with Vertical(id="disclaimer-box"):
                 yield Static(
                     "⚠ Package yt-dlp or/and ffmpeg is not installed. Please install to use the app.",
@@ -270,7 +270,7 @@ class YTmp3Screen(Screen):
 
         pct   = int((pos / dur) * width)
         bar   = "█" * pct + "░" * (width - pct)
-        emoji = "▶" if self._is_playing else "| |"
+        emoji = "" if self._is_playing else "| |"
 
         def update():
             self.query_one("#yt-np-bar",    Static).update(bar)
@@ -310,10 +310,10 @@ class YTmp3Screen(Screen):
         results = self.query_one("#yt-results", VerticalScroll)
         if reset:
             results.remove_children()
-            results.mount(Static("⏳ Searching...", id="yt-loading"))
+            results.mount(Static("󱎫 Searching...", id="yt-loading"))
         else:
             for btn in self.query(".yt-load-more-btn"):
-                btn.label = "⏳ Loading..."
+                btn.label = "󱎫 Loading..."
                 btn.disabled = True
 
     def _render_results(self, new_results, reset):
@@ -344,16 +344,16 @@ class YTmp3Screen(Screen):
                 f"{track['uploader']}  ·  {track['duration']}",
                 classes="yt-result-meta"
             ))
-            row.mount(Button("▶ Play", id=f"ytplay-{gen}-{real_i}",
+            row.mount(Button(" Play", id=f"ytplay-{gen}-{real_i}",
                              classes="yt-play-btn"))
-            row.mount(Button("⬇",     id=f"ytdl-{gen}-{real_i}",
+            row.mount(Button("󰇚",     id=f"ytdl-{gen}-{real_i}",
                              classes="yt-dl-btn"))
-            row.mount(Button("♫+",    id=f"ytadd-{gen}-{real_i}",
+            row.mount(Button("󰎆+",    id=f"ytadd-{gen}-{real_i}",
                              classes="yt-addpl-btn"))
             row._track_idx = real_i
 
         scroll.mount(Button(
-            "⬇ Load More",
+            "󰇚 Load More",
             id=f"yt-load-more-{gen}",
             classes="yt-load-more-btn"
         ))
@@ -371,14 +371,14 @@ class YTmp3Screen(Screen):
         """Download and play a track. Also pre-fetch next and prev."""
         self.app.call_from_thread(
             self.query_one("#yt-np-title",  Static).update,
-            f"⏳ Loading: {track['title'][:40]}..."
+            f"󱎫 Loading: {track['title'][:40]}..."
         )
         self.app.call_from_thread(
             self.query_one("#yt-np-status", Static).update,
-            "⬇  DOWNLOADING..."
+            "󰇚  DOWNLOADING..."
         )
 
-        # promote current → prev so ⏮ plays it without re-downloading
+        # promote current → prev so 󰒮 plays it without re-downloading
         if os.path.exists(self._temp_curr):
             shutil.copy2(self._temp_curr, self._temp_prev)
 
@@ -387,7 +387,7 @@ class YTmp3Screen(Screen):
         if not ok:
             self.app.call_from_thread(
                 self.query_one("#yt-np-status", Static).update,
-                "✗  Download failed"
+                "  Download failed"
             )
             return
 
@@ -413,10 +413,10 @@ class YTmp3Screen(Screen):
         )
         self.app.call_from_thread(
             self.query_one("#yt-np-status",   Static).update,
-            "▶  PLAYING"
+            "  PLAYING"
         )
         def set_pause():
-            self.query_one("#yt-playpause", Button).label = "⏸"
+            self.query_one("#yt-playpause", Button).label = ""
         self.app.call_from_thread(set_pause)
 
         
@@ -435,8 +435,8 @@ class YTmp3Screen(Screen):
             self._poll_counter = 0
             def update():
                 self.query_one("#yt-np-title",  Static).update(track['title'])
-                self.query_one("#yt-np-status", Static).update("▶  PLAYING")
-                self.query_one("#yt-playpause", Button).label = "⏸"
+                self.query_one("#yt-np-status", Static).update("  PLAYING")
+                self.query_one("#yt-playpause", Button).label = ""
             self.app.call_from_thread(update)
         else:
             # fallback: download fresh
@@ -475,10 +475,10 @@ class YTmp3Screen(Screen):
 
         self.app.call_from_thread(
             self.query_one("#yt-np-status", Static).update,
-            f"⬇  Saving: {safe[:30]}..."
+            f"󰇚  Saving: {safe[:30]}..."
         )
         ok = yt_download_to_file(track['url'], dest)
-        msg = f"✅ Saved to {dl_dir}" if ok else "✗  Download failed"
+        msg = f" Saved to {dl_dir}" if ok else "  Download failed"
         self.app.call_from_thread(
             self.query_one("#yt-np-status", Static).update, msg
         )
@@ -559,13 +559,13 @@ class YTmp3Screen(Screen):
             if status == 'playing':
                 mp_run('pause')
                 self._is_playing = False
-                event.button.label = "▶"
-                self.query_one("#yt-np-status", Static).update("⏸  PAUSED")
+                event.button.label = ""
+                self.query_one("#yt-np-status", Static).update("  PAUSED")
             elif status == 'paused':
                 mp_run('resume')
                 self._is_playing = True
-                event.button.label = "⏸"
-                self.query_one("#yt-np-status", Static).update("▶  PLAYING")
+                event.button.label = ""
+                self.query_one("#yt-np-status", Static).update("  PLAYING")
             else:
                 if self._queue and self._queue_idx >= 0:
                     self._play_track(self._queue[self._queue_idx])

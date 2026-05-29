@@ -390,14 +390,14 @@ REGION_ORDER = [
 ]
 
 REGION_LABELS = {
-    "world": "🌍 World",
-    "america": "🇺🇸 America",
-    "germany": "🇩🇪 Germany",
-    "pakistan": "🇵🇰 Pakistan",
-    "iran": "🇮🇷 Iran",
-    "uk": "🇬🇧 UK",
-    "india": "🇮🇳 India",
-    "japan": "🇯🇵 Japan",
+    "world": "󰭹 World",
+    "america": "󰭹 America",
+    "germany": "󰭹 Germany",
+    "pakistan": "󰭹 Pakistan",
+    "iran": "󰭹 Iran",
+    "uk": "󰭹 UK",
+    "india": "󰭹 India",
+    "japan": "󰭹 Japan",
 }
 
 REGION_KEYWORDS = {
@@ -468,7 +468,7 @@ class RepoExploreScreen(Screen):
         with Vertical(id="repo-root"):
             with Horizontal(id="repo-header"):
                 yield Button("← Back", id="repo-back")
-                yield Static("🌍 GitHub", id="repo-title")
+                yield Static("󰭹 GitHub", id="repo-title")
                 yield Button(REGION_LABELS[self._active_region], id="repo-region")
 
             yield Static("Filters", id="repo-filters-label")
@@ -653,7 +653,7 @@ class RepoExploreScreen(Screen):
                 Static(full_name, classes="repo-name"),
                 Static(desc, classes="repo-desc"),
                 Static(
-                    f"★ {stars}   |   forks {forks}   |   {lang}   |   @{owner}",
+                    f" {stars}   |   forks {forks}   |   {lang}   |   @{owner}",
                     classes="repo-meta"
                 ),
                 classes="repo-meta-block"

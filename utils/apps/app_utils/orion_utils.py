@@ -114,10 +114,10 @@ def get_sys_stats():
                            capture_output=True, text=True, timeout=3)
         d = json.loads(r.stdout)
         pct  = d.get('percentage', '?')
-        stat = '⚡' if d.get('status') == 'CHARGING' else '🔋'
+        stat = '󱐋' if d.get('status') == 'CHARGING' else ''
         stats['bat'] = f"{stat} {pct}%"
     except Exception:
-        stats['bat'] = "🔋 N/A"
+        stats['bat'] = " N/A"
     try:
         def rs():
             with open('/proc/stat') as f:

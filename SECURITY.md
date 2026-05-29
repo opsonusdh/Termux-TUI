@@ -6,7 +6,7 @@ Termux-TUI includes pre-configured installers for powerful security tools such a
 Hydra, Aircrack-ng, SQLMap, and others. These tools are provided **for educational purposes,
 personal learning, and authorized security research only**.
 
-> **⚠️ Warning:** Do not use any tool from this project on systems, networks, or devices you
+> ** Warning:** Do not use any tool from this project on systems, networks, or devices you
 > do not own or do not have **explicit written permission** to test. Unauthorized use may
 > constitute a criminal offense under applicable law and is strictly against the intent of
 > this project.
@@ -17,8 +17,8 @@ personal learning, and authorized security research only**.
 
 | Version        | Supported          | Notes                        |
 |----------------|--------------------|------------------------------|
-| 2.x (current)  | ✅ Yes             | Actively maintained          |
-| 1.x            | ❌ No              | No longer receiving updates  |
+| 2.x (current)  | Yes             | Actively maintained          |
+| 1.x            | No              | No longer receiving updates  |
 
 ---
 

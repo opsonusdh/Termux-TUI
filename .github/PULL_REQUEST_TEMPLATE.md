@@ -10,13 +10,13 @@ Closes #<!-- issue number, e.g. Closes #12 -->
 
 <!-- Check all that apply -->
 
-- [ ] 🐛 Bug fix
-- [ ] ✨ New feature
-- [ ] 📦 New tool added to Packages tab
-- [ ] ⚙️ New command added to System tab
-- [ ] 📝 Documentation update
-- [ ] 🎨 UI / style improvement
-- [ ] 🔧 Refactor / code cleanup
+- [ ]  Bug fix
+- [ ] 󱐋 New feature
+- [ ]  New tool added to Packages tab
+- [ ]  New command added to System tab
+- [ ] 󰏫 Documentation update
+- [ ] 󰏘 UI / style improvement
+- [ ] 󱁤 Refactor / code cleanup
 
 ---
 

@@ -23,12 +23,12 @@ class FileBrowserScreen(Screen):
     def compose(self) -> ComposeResult:
         with Horizontal(id="file-header"):
             yield Button("← Back", id="file-back-main")
-            yield Button("⬆ Up",   id="file-up-btn")
+            yield Button("󰇜 Up",   id="file-up-btn")
             yield Static(self._current_path, id="file-path-display")
         with VerticalScroll(id="file-scroll"):
             yield Static("Loading...")
         yield Input(
-            placeholder="📁 type path + Enter to jump anywhere...",
+            placeholder=" type path + Enter to jump anywhere...",
             id="file-input"
         )
 
@@ -42,7 +42,7 @@ class FileBrowserScreen(Screen):
         gen = self._nav_gen
         self.app.call_from_thread(
             self.query_one("#file-path-display", Static).update,
-            f"  📁 {path}"
+            f"   {path}"
         )
         try:    entries = sorted(os.listdir(path))
         except: entries = []
@@ -64,7 +64,7 @@ class FileBrowserScreen(Screen):
             i = 0
             for d in dirs:
                 scroll.mount(Button(
-                    f"  📁  {d}/", id=f"fentry-{gen}-{i}",
+                    f"    {d}/", id=f"fentry-{gen}-{i}",
                     classes="file-dir-btn"
                 ))
                 i += 1
@@ -72,7 +72,7 @@ class FileBrowserScreen(Screen):
                 try:    size = fmt_size(os.path.getsize(os.path.join(path, f)))
                 except: size = "?"
                 ext  = f.split(".")[-1].lower() if "." in f else ""
-                icon = ICONS.get(ext, "📄")
+                icon = ICONS.get(ext, "󰈙")
                 scroll.mount(Button(
                     f"  {icon}  {f}  [{size}]", id=f"fentry-{gen}-{i}",
                     classes="file-file-btn"
@@ -92,7 +92,7 @@ class FileBrowserScreen(Screen):
             rlog = RichLog(markup=True, id="file-view-log")
             scroll.mount(rlog)
             scroll.mount(Button(
-                "⬆ Back to folder", id="file-back-btn",
+                "󰇜 Back to folder", id="file-back-btn",
                 classes="file-dir-btn"
             ))
         self.app.call_from_thread(show)
@@ -102,7 +102,7 @@ class FileBrowserScreen(Screen):
             self.app.call_from_thread(
                 rlog.write, Text(text, style) if style else Text(text)
             )
-        w(f"◈ {path}", "bold cyan")
+        w(f"󰇙 {path}", "bold cyan")
         w("─" * 42, "dim #1a1a3e")
         try:
             size = os.path.getsize(path)
@@ -114,7 +114,7 @@ class FileBrowserScreen(Screen):
                 with open(path, 'r', errors='replace') as f:
                     for line in f.readlines()[:300]: w(f"  {line.rstrip()}", "dim green")
         except Exception as e:
-            w(f"✗ {e}", "bold red")
+            w(f" {e}", "bold red")
 
     def on_button_pressed(self, event: Button.Pressed):
         bid = str(event.button.id)

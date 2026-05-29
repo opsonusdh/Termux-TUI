@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 
 contact_links:
-  - name: 💬 Ask a Question / Start a Discussion
+  - name: 󰭹 Ask a Question / Start a Discussion
     url: https://github.com/opsonusdh/Termux-TUI/discussions
     about: For general questions, ideas, and community chat — please use Discussions instead of Issues.
 

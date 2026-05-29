@@ -29,10 +29,10 @@ def fetch_call_log(limit=20, offset=0):
 
 def type_icon(t):
     t = t.upper()
-    if t == "INCOMING":  return "↓"
-    if t == "OUTGOING":  return "↑"
-    if t == "MISSED":    return "×"
-    return "📞"
+    if t == "INCOMING":  return ""
+    if t == "OUTGOING":  return ""
+    if t == "MISSED":    return ""
+    return ""
 
 def clean_number(n):
     return re.sub(r'[^\d+]', '', n)

@@ -1,5 +1,5 @@
 ---
-name: ✨ Feature Request
+name: 󱐋 Feature Request
 about: Suggest a new idea or improvement for Termux-TUI
 title: "[FEAT] "
 labels: enhancement
