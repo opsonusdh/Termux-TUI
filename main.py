@@ -11,13 +11,15 @@ from functools import partial
 from rich.text import Text
 import subprocess, os, re, time, json
 from datetime import datetime
-from utils.constants import SPLASH, BASIC_COMMANDS, TOOLS, CAT_STYLE, SYSTEM_CMDS, CSS_SPLASH_SCREEN, CSS_MAIN
+from utils.constants import SPLASH, BASIC_COMMANDS, TOOLS, CAT_STYLE, SYSTEM_CMDS, CSS_SPLASH_SCREEN, CSS_MAIN, setup_font, restore_font
 from utils.helpers import strip_ansi, get_recent_programs, get_battery, get_memory, run_speedtest, fmt_speed, flatten_json, fmt_size, load_config, save_config
 from utils.apps.dialer import DialerScreen
 from utils.apps.file_manager import FileBrowserScreen
 from utils.apps.music_player import MusicPlayerScreen
 from utils.apps.ytmp3 import YTmp3Screen
 from utils.apps.github_repo_finder import RepoExploreScreen
+from utils.apps.orion import OrionLaunchScreen
+from utils.apps.browser import BrowshScreen
 
 
 # Loading Config
@@ -45,7 +47,6 @@ class SplashScreen(Screen):
         
     @work(thread=True)
     def run_diagnosis(self):
-        # capture_output=True prevents any stdout/stderr from leaking to the terminal
         subprocess.run("yes|termux-setup-storage", shell=True, capture_output=True)
         subprocess.run("termux-call-log",          shell=True, capture_output=True)
         subprocess.run("termux-contact-list",      shell=True, capture_output=True)
@@ -155,6 +156,9 @@ class TermuxDashboard(App):
                     yield Button("📞 Dialer",       id="app-dialer", classes="apps")
                     yield Button("▶ YTmp3",         id="app-ytmp3",  classes="apps")
                     yield Button("🌍 GitHub",       id="app-github",  classes="apps")
+                    yield Button("🌐 Browser", id="app-browser")
+                    yield Button("♐ Orion AI(coming soon)", id="app-orion")
+                    
 
         yield Footer()
 
@@ -196,7 +200,6 @@ class TermuxDashboard(App):
             self._cached_mem  = get_memory()
 
         # network speed every second
-
         text = (
             f"[ {time_str} ]\n\n"
             f"PWR  ▸ {self._cached_batt}\n\n"
@@ -265,7 +268,11 @@ class TermuxDashboard(App):
             self.app.push_screen(YTmp3Screen())
         elif bid == "app-github":
             self.app.push_screen(RepoExploreScreen())
-
+        elif bid == "app-browser":
+            self.app.push_screen(BrowshScreen())
+# ORION TEST 
+#        elif bid == "app-orion":
+#            self.app.push_screen(OrionLaunchScreen())
 
 
     # INPUT HANDLER
@@ -379,4 +386,6 @@ class TermuxDashboard(App):
 
 
 app = TermuxDashboard()
+setup_font()
 app.run()
+restore_font()

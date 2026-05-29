@@ -1,5 +1,6 @@
-import os 
-from utils import VERSION
+import shutil, os, subprocess
+from utils import *
+
 
 def _make_splash(version): 
 	inner_width=38 
@@ -28,7 +29,28 @@ def _make_splash(version):
 
 	) 
 
-SPLASH=_make_splash(VERSION) 
+SPLASH=_make_splash(VERSION)
+
+FONT_DIR     = os.path.expanduser("~/.termux/")
+FONT_PATH    = os.path.join(FONT_DIR, "font.ttf")
+FONT_BAK     = os.path.join(FONT_DIR, "font.bak")
+TUI_FONT     = os.path.join(os.path.dirname(__file__), "../termux-tui-font.bak")
+
+def setup_font():
+    os.makedirs(FONT_DIR, exist_ok=True)
+    if not os.path.isfile(TUI_FONT):
+        raise Exception(TUI_FONT)
+    if os.path.isfile(FONT_PATH):
+        shutil.move(FONT_PATH, FONT_BAK)
+    shutil.copy2(TUI_FONT, FONT_PATH)
+    subprocess.run(['termux-reload-settings'], capture_output=True)
+
+def restore_font():
+    if os.path.isfile(FONT_PATH):
+        os.remove(FONT_PATH)
+    if os.path.isfile(FONT_BAK):
+        shutil.move(FONT_BAK, FONT_PATH)
+    subprocess.run(['termux-reload-settings'], capture_output=True)
 
 # CONSTANTS 
 BASIC_COMMANDS= {
@@ -592,6 +614,15 @@ Tab.-active {
 #app-github:hover {
 	background: #e0e0e0;
 	color: #000000;
+}
+#app-orion       { 
+    background: #000a1a; 
+    color: #00ffff; 
+    border: tall #00ffff; 
+}
+#app-orion:hover { 
+    background: #00ffff; 
+    color: #000000; 
 }
 
 /* ── DARK theme ── */

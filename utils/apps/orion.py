@@ -337,10 +337,10 @@ class OrionScreen(Screen):
                 yield RichLog(id="orion-log", markup=True, wrap=True)
                 yield Static("●  Ready", id="orion-thinking-bar")
 
-        with Horizontal(id="orion-input-row"):
-            yield Static("YOU ▸", id="orion-prompt-label")
-            yield Input(placeholder="Ask Orion anything...", id="orion-input")
-            yield Button("Send", id="orion-send")
+#        with Horizontal(id="orion-input-row"):
+#            yield Static("YOU ▸", id="orion-prompt-label")
+#            yield Input(placeholder="Ask Orion anything...", id="orion-input")
+#            yield Button("Send", id="orion-send")
 
     def on_mount(self):
         for cls in ["theme-dark", "theme-light"]:
@@ -379,29 +379,19 @@ class OrionScreen(Screen):
 
     @work(thread=True)
     def _start_orion(self):
-        env = os.environ.copy()
-        env['PYTHONUNBUFFERED'] = '1'
-        env['PYTHONIOENCODING'] = 'utf-8'
-        self._proc = subprocess.Popen(
-            ['python', '-u', 'core'],
-            cwd=ORION_DIR,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True, bufsize=0, env=env
-        )
-        self._is_running = True
-        self.app.call_from_thread(
-            self.query_one("#orion-thinking-bar", Static).update,
-            "●  Orion running..."
-        )
-        for raw_line in self._proc.stdout:
-            self._handle_output_line(raw_line)
-        self._is_running = False
-        self.app.call_from_thread(
-            self.query_one("#orion-thinking-bar", Static).update,
-            "●  Orion stopped"
-        )
+        try:
+            subprocess.Popen(
+                ['termux-terminal', '-e',
+                 f'bash -c "cd {ORION_DIR} && python -u core; read"'],
+            )
+            self._is_running = True
+            self._write_log("◈ Orion launched in external terminal", "bold cyan")
+            self._write_log("Use the terminal window to interact with Orion.", "dim #444466")
+            self.query_one("#orion-thinking-bar", Static).update(
+                "●  Orion running in terminal"
+            )
+        except Exception as e:
+            self._write_log(f"✗ Failed to launch: {e}", "bold red")
 
     # ── output handler ────────────────────────────────────────────
 
