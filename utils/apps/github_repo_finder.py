@@ -390,7 +390,7 @@ REGION_ORDER = [
 ]
 
 REGION_LABELS = {
-    "world": "🌍 World",
+    "world": " World",
     "america": "🇺🇸 America",
     "germany": "🇩🇪 Germany",
     "pakistan": "🇵🇰 Pakistan",
@@ -468,7 +468,7 @@ class RepoExploreScreen(Screen):
         with Vertical(id="repo-root"):
             with Horizontal(id="repo-header"):
                 yield Button("← Back", id="repo-back")
-                yield Static("🌍 GitHub", id="repo-title")
+                yield Static(" GitHub", id="repo-title")
                 yield Button(REGION_LABELS[self._active_region], id="repo-region")
 
             yield Static("Filters", id="repo-filters-label")

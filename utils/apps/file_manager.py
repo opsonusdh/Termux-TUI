@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Button, Static, Input, RichLog
-from textual.containers import Horizontal, VerticalScroll
+from textual.containers import Horizontal, VerticalScroll, Vertical
 from textual import work
 from rich.text import Text
 import subprocess, os, time
@@ -21,14 +21,17 @@ class FileBrowserScreen(Screen):
         self._config       = load_config()
 
     def compose(self) -> ComposeResult:
-        with Horizontal(id="file-header"):
-            yield Button("← Back", id="file-back-main")
-            yield Button("⬆ Up",   id="file-up-btn")
-            yield Static(self._current_path, id="file-path-display")
+        with Vertical(id="file-header"):
+            with Horizontal(id="file-title"):
+                yield Button("← Back", id="file-back-main")
+                yield Static("◈  FILE MANAGER  ◈", id="file-header-title")
+            with Horizontal(id="file-loc"):
+                yield Button("⬆ Up",   id="file-up-btn")
+                yield Static(self._current_path, id="file-path-display")
         with VerticalScroll(id="file-scroll"):
             yield Static("Loading...")
         yield Input(
-            placeholder="📁 type path + Enter to jump anywhere...",
+            placeholder=" type path + Enter to jump anywhere...",
             id="file-input"
         )
 
@@ -42,7 +45,7 @@ class FileBrowserScreen(Screen):
         gen = self._nav_gen
         self.app.call_from_thread(
             self.query_one("#file-path-display", Static).update,
-            f"  📁 {path}"
+            f"   {path}"
         )
         try:    entries = sorted(os.listdir(path))
         except: entries = []
@@ -64,7 +67,7 @@ class FileBrowserScreen(Screen):
             i = 0
             for d in dirs:
                 scroll.mount(Button(
-                    f"  📁  {d}/", id=f"fentry-{gen}-{i}",
+                    f"    {d}/", id=f"fentry-{gen}-{i}",
                     classes="file-dir-btn"
                 ))
                 i += 1
@@ -72,7 +75,7 @@ class FileBrowserScreen(Screen):
                 try:    size = fmt_size(os.path.getsize(os.path.join(path, f)))
                 except: size = "?"
                 ext  = f.split(".")[-1].lower() if "." in f else ""
-                icon = ICONS.get(ext, "📄")
+                icon = ICONS.get(ext, "")
                 scroll.mount(Button(
                     f"  {icon}  {f}  [{size}]", id=f"fentry-{gen}-{i}",
                     classes="file-file-btn"

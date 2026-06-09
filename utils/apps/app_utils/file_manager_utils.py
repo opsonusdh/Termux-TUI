@@ -1,10 +1,105 @@
-ICONS= {
-	'py': '🐍', 'sh': '📜', 'txt': '📄', 'md': '📝',
-	'jpg': '🖼️', 'png': '🖼️', 'gif': '🖼️',
-	'zip': '📦', 'tar': '📦', 'gz': '📦',
-	'mp3': '🎵', 'mp4': '🎬', 'pdf': '📕',
-	'json': '🔧', 'html': '🌐', 'css': '🎨',
-	'js': '⚡', 'apk': '🤖', 'db': '🗄️',
+ICONS = {
+    # Programming
+    'py':   '',
+    'js':   '',
+    'ts':   '',
+    'jsx':  '󰜈',
+    'tsx':  '󰜈',
+    'java': '',
+    'c':    '',
+    'cpp':  '',
+    'h':    '',
+    'hpp':  '',
+    'rs':   '',
+    'go':   '',
+    'rb':   '',
+    'php':  '',
+    'swift':'',
+    'kt':   '',
+    'lua':  '',
+    'r':    '󰟔',
+
+    # Web
+    'html': '',
+    'css':  '',
+    'scss': '',
+    'sass': '',
+    'json': '',
+    'xml':  '󰗀',
+    'yaml': '',
+    'yml':  '',
+
+    # Shell / Config
+    'sh':   '',
+    'bash': '',
+    'zsh':  '',
+    'fish': '',
+    'conf': '',
+    'ini':  '',
+    'toml': '',
+    'env':  '',
+
+    # Documents
+    'txt':  '',
+    'md':   '󰍔',
+    'pdf':  '',
+    'doc':  '󰈬',
+    'docx': '󰈬',
+    'xls':  '󰈛',
+    'xlsx': '󰈛',
+    'ppt':  '󰈧',
+    'pptx': '󰈧',
+
+    # Images
+    'jpg':  '󰉏',
+    'jpeg': '󰉏',
+    'png':  '󰉏',
+    'gif':  '󰵸',
+    'svg':  '󰜡',
+    'webp': '󰉏',
+    'ico':  '󰀻',
+
+    # Audio
+    'mp3':  '󰎆',
+    'wav':  '󰎆',
+    'flac': '󰎆',
+    'ogg':  '󰎆',
+    'm4a':  '󰎆',
+
+    # Video
+    'mp4':  '󰈫',
+    'mkv':  '󰈫',
+    'avi':  '󰈫',
+    'mov':  '󰈫',
+    'webm': '󰈫',
+
+    # Archives
+    'zip':  '',
+    'tar':  '',
+    'gz':   '',
+    'xz':   '',
+    '7z':   '',
+    'rar':  '',
+
+    # Databases
+    'db':   '󰆼',
+    'sqlite':'󰆼',
+    'sql':  '󰆼',
+
+    # Android
+    'apk':  '',
+    'aab':  '',
+
+    # Git
+    'git':      '',
+    'gitignore':'',
+
+    # Misc
+    'log':  '󰌱',
+    'lock': '󰌾',
+    'bak':  '󰁯',
+    'iso':  '󰗮',
+    'torrent': '󰈖',
 }
 
 # CSS
@@ -17,6 +112,22 @@ FILE_EXPLORER_CSS="""
 	height: auto;
 	background: #000020;
 	border-bottom: solid #1a1a3e;
+}
+
+#file-title {
+    height: auto;
+    margin-bottom: 1;
+}
+
+#file-loc{
+    height: auto;
+}
+
+#file-header-title {
+	width: 1fr;
+	color: #00ffff;
+	content-align: center middle;
+	text-style: bold;
 }
 
 #file-back-btn {

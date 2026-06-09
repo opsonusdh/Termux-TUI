@@ -24,11 +24,12 @@ class DialerScreen(Screen):
     def compose(self) -> ComposeResult:
         with Horizontal(id="dial-header"):
             yield Button("← Back", id="dial-back")
+            yield Static("◈  DIALER  ◈", id="dial-header-title")
 
         with Horizontal(id="dial-tabs"):
-            yield Button("📞 Dialer",   id="tab-dialer",   classes="dial-tab active")
-            yield Button("📋 Logs",     id="tab-logs",     classes="dial-tab")
-            yield Button("👥 Contacts", id="tab-contacts", classes="dial-tab")
+            yield Button(" Dialer",   id="tab-dialer",   classes="dial-tab active")
+            yield Button(" Logs",     id="tab-logs",     classes="dial-tab")
+            yield Button(" Contacts", id="tab-contacts", classes="dial-tab")
 
         # DIALER PANEL
         with Vertical(id="panel-dialer"):
@@ -53,7 +54,7 @@ class DialerScreen(Screen):
                     yield Button("0", id="key-0", classes="dial-key")
                     yield Button("#", id="key-hash", classes="dial-key")
                 with Horizontal(id="dial-call-row"):
-                    yield Button("📞 CALL", id="dial-call")
+                    yield Button(" CALL", id="dial-call")
                     yield Button("⌫",       id="dial-del")
 
         # LOGS PANEL
@@ -63,7 +64,7 @@ class DialerScreen(Screen):
 
         # CONTACTS PANEL
         with Vertical(id="panel-contacts"):
-            yield Input(placeholder="🔍 Search contacts...", id="contacts-search")
+            yield Input(placeholder=" Search contacts...", id="contacts-search")
             with VerticalScroll(id="contacts-scroll"):
                 yield Static("⏳ Loading contacts...", id="contacts-loading")
 
@@ -145,7 +146,7 @@ class DialerScreen(Screen):
             row.mount(info)                                      # then info into row
             info.mount(Static(name, classes="contact-name"))  # then statics into info
             info.mount(Static(number, classes="contact-num"))
-            btn = Button("📞", id=f"ccall-{gen}-{i}", classes="contact-call-btn")
+            btn = Button("", id=f"ccall-{gen}-{i}", classes="contact-call-btn")
             row.mount(btn)
             row._call_number = number
 
@@ -209,7 +210,7 @@ class DialerScreen(Screen):
             row.mount(info)                                     # then info into row
             info.mount(Static(f"{icon}  {name}", classes="log-name"))
             info.mount(Static(f"{number}  ·  {date}  ·  {dur}", classes="log-meta"))
-            btn = Button("📞", id=f"lcall-{gen}-{i}", classes="log-call-btn")
+            btn = Button("", id=f"lcall-{gen}-{i}", classes="log-call-btn")
             row.mount(btn)
             row._call_number = number
 

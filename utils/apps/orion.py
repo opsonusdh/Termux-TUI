@@ -1,117 +1,178 @@
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Button, Static, Input, RichLog
-from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.containers import Horizontal, Vertical, VerticalScroll, ScrollableContainer
 from textual import work
 from rich.text import Text
 import subprocess, os, threading, time, re
 
 from utils.apps.app_utils.orion_utils import (
-    ORION_DIR, STT_DIR, CONFIG, save_orion_config,
-    orion_installed, stt_installed, api_keys_exist, save_api_keys,
+    ORION_DIR, CORE_DIR, STT_DIR, CONFIG, save_orion_config,
+    orion_installed, stt_installed, api_keys_exist,
+    load_api_keys, save_api_keys,
     strip_ansi, ansi_to_rich, get_sys_stats, STT_MODELS,
-    ORION_INSTALLER_CSS, ORION_APIKEY_CSS, ORION_CSS, ORION_LAUNCH_CSS
+    ORION_PROVIDERS, TOOLS, TOOL_PREFIXES,
+    ORION_INSTALLER_CSS, ORION_APIKEY_CSS, ORION_CSS, ORION_LAUNCH_CSS,
 )
 
 
-# ── API KEY SCREEN ────────────────────────────────────────────────
+#  API KEY SCREEN  (multi-provider tabbed) 
 
 class OrionApiKeyScreen(Screen):
     CSS = ORION_APIKEY_CSS
 
     def __init__(self):
         super().__init__()
-        self._keys    = []
-        self._key_gen = 0
-        self._load_keys_from_file()
+        # keys_by_provider: {pid: [key, ...]}
+        self._keys       = load_api_keys()
+        self._active_pid = ORION_PROVIDERS[0][0]
+        self._gen        = 0
 
-    def _load_keys_from_file(self):
-        keys_file = os.path.join(ORION_DIR, "api.keys")
-        try:
-            if os.path.exists(keys_file) and os.path.getsize(keys_file) > 0:
-                with open(keys_file) as f:
-                    for line in f:
-                        key = line.strip()
-                        if key and key not in self._keys:
-                            self._keys.append(key)
-        except Exception:
-            self._keys = []
-
-    def on_mount(self):
-        self._refresh_keys()
+    #  layout 
 
     def compose(self) -> ComposeResult:
         with Vertical(id="api-box"):
-            yield Static("◈  ORION  ◈\nGemini API Key Setup", id="api-title")
             yield Static(
-                "Orion uses Google Gemini.\n"
-                "Get a free key at: aistudio.google.com\n"
-                "Add one or more keys — Orion rotates them automatically.",
+                "◈  ORION  ◈\nAPI Key Setup",
+                id="api-title"
+            )
+            yield Static(
+                "Google is required. NVIDIA and Groq are optional fallbacks.\n"
+                "Orion rotates keys automatically to avoid rate limits.",
                 id="api-desc"
             )
+
+            # Provider tab strip
+            with Horizontal(id="api-tab-strip"):
+                for pid, label, _hint, _ph in ORION_PROVIDERS:
+                    yield Button(label, id=f"apitab-{pid}", classes="api-tab")
+
+            # Hint for the active provider
+            yield Static("", id="api-provider-hint")
+
+            # Key list scroll area
             with VerticalScroll(id="api-keys-scroll"):
-                yield Static("  No keys added yet.", id="api-empty")
+                pass
+
+            # Input row
             with Horizontal(id="api-input-row"):
-                yield Input(placeholder="Paste API key (AIza...)", id="api-input")
+                yield Input(placeholder="Paste key here...", id="api-input")
                 yield Button("+ Add", id="api-add")
+
             yield Static("", id="api-status")
             with Horizontal(id="api-btns"):
-                yield Button("✅ Save & Continue", id="api-save")
+                yield Button(" Save & Continue", id="api-save")
+
+    def on_mount(self):
+        self._switch_tab(self._active_pid)
+
+    #  tab switching 
+
+    def _switch_tab(self, pid: str):
+        self._active_pid = pid
+        # Update tab button styles
+        for p, *_ in ORION_PROVIDERS:
+            try:
+                btn = self.query_one(f"#apitab-{p}", Button)
+                btn.add_class("active") if p == pid else btn.remove_class("active")
+            except Exception:
+                pass
+        # Update hint text
+        for p, _label, hint, _ph in ORION_PROVIDERS:
+            if p == pid:
+                self.query_one("#api-provider-hint", Static).update(f"  {hint}")
+                break
+        # Refresh input placeholder
+        for p, _label, _hint, ph in ORION_PROVIDERS:
+            if p == pid:
+                self.query_one("#api-input", Input).placeholder = f"Paste key ({ph})"
+                break
+        self._refresh_keys()
+
+    #  key list rendering 
 
     def _refresh_keys(self):
-        self._key_gen += 1
-        gen    = self._key_gen
+        self._gen += 1
+        gen    = self._gen
+        pid    = self._active_pid
         scroll = self.query_one("#api-keys-scroll", VerticalScroll)
         scroll.remove_children()
-        if not self._keys:
-            scroll.mount(Static("  No keys added yet.", id="api-empty"))
+
+        keys = self._keys.get(pid, [])
+        if not keys:
+            scroll.mount(Static(
+                "  No keys added yet." + (
+                    "" if pid != "google" else "  (Google key required!)"
+                ),
+                classes="api-key-label"
+            ))
             return
-        for i, key in enumerate(self._keys):
-            masked = key[:12] + "..." + key[-4:] if len(key) > 16 else key
-            row    = Horizontal(classes="api-key-row")
+
+        for i, key in enumerate(keys):
+            masked = key[:14] + "..." + key[-4:] if len(key) > 18 else key
+            row = Horizontal(classes="api-key-row")
             scroll.mount(row)
-            row.mount(Static(f"  🔑 {masked}", classes="api-key-label"))
-            row.mount(Button("✕", id=f"apidel-{gen}-{i}", classes="api-key-del"))
-            row._key_idx = i
+            row.mount(Static(f"   {masked}", classes="api-key-label"))
+            row.mount(Button("✕", id=f"apidel-{gen}-{pid}-{i}",
+                             classes="api-key-del"))
+
+    #  events 
 
     def on_button_pressed(self, event: Button.Pressed):
         bid = str(event.button.id)
-        if bid == "api-add":
-            self._add_key_from_input()
+
+        if bid.startswith("apitab-"):
+            self._switch_tab(bid[7:])
+
+        elif bid == "api-add":
+            self._add_key()
+
         elif bid == "api-save":
             self._do_save()
+
         elif bid.startswith("apidel-"):
-            idx = int(bid.split("-")[-1])
-            if 0 <= idx < len(self._keys):
-                self._keys.pop(idx)
-                self._refresh_keys()
+            # format: apidel-{gen}-{pid}-{idx}
+            parts = bid.split("-")
+            if len(parts) >= 4:
+                del_pid = parts[2]
+                idx     = int(parts[3])
+                if del_pid in self._keys and 0 <= idx < len(self._keys[del_pid]):
+                    self._keys[del_pid].pop(idx)
+                    self._refresh_keys()
 
     def on_input_submitted(self, event: Input.Submitted):
         if event.input.id == "api-input":
-            self._add_key_from_input()
+            self._add_key()
 
-    def _add_key_from_input(self):
+    def _add_key(self):
+        pid = self._active_pid
         val = self.query_one("#api-input", Input).value.strip()
-        if val and val not in self._keys:
-            self._keys.append(val)
+        if not val:
+            return
+        if pid not in self._keys:
+            self._keys[pid] = []
+        if val not in self._keys[pid]:
+            self._keys[pid].append(val)
             self._refresh_keys()
             self.query_one("#api-input", Input).clear()
+            total = sum(len(v) for v in self._keys.values())
             self.query_one("#api-status", Static).update(
-                f"✅ {len(self._keys)} key(s) added"
+                f" {total} key(s) across all providers"
             )
 
     def _do_save(self):
-        if not self._keys:
+        if not self._keys.get("google"):
             self.query_one("#api-status", Static).update(
-                "✗ Add at least one API key"
+                "✗ At least one Google key is required"
             )
             return
         ok = save_api_keys(self._keys)
         if ok:
+            total = sum(len(v) for v in self._keys.values())
             self.query_one("#api-status", Static).update(
-                f"✅ Saved {len(self._keys)} key(s)"
+                f" Saved {total} key(s)"
             )
-            time.sleep(0.6)
+            time.sleep(0.5)
             self.dismiss(True)
         else:
             self.query_one("#api-status", Static).update(
@@ -119,7 +180,7 @@ class OrionApiKeyScreen(Screen):
             )
 
 
-# ── INSTALL SCREEN ────────────────────────────────────────────────
+#  INSTALL SCREEN 
 
 class OrionInstallScreen(Screen):
     CSS = ORION_INSTALLER_CSS
@@ -196,19 +257,24 @@ class OrionInstallScreen(Screen):
     @work(thread=True)
     def run_install(self):
         log = self.query_one("#inst-log", RichLog)
+
         def w(text, style="dim green"):
             self.app.call_from_thread(log.write, Text(text, style))
+
         def status(text):
             self.app.call_from_thread(
                 self.query_one("#inst-status", Static).update, text
             )
 
         for cmd, msg in [
-            ("pkg install -y git python",                                  "Installing git & python..."),
-            (f"git clone https://github.com/opsonusdh/Termux-AI {ORION_DIR}", "Cloning Orion..."),
-            (f"cd {ORION_DIR} && bash setup.sh",                           "Running setup.sh..."),
+            ("pkg install -y git python",
+             "Installing git & python..."),
+            (f"git clone https://github.com/opsonusdh/Termux-AI {ORION_DIR}",
+             "Cloning Termux-AI..."),
+            (f"cd {ORION_DIR} && bash setup.sh",
+             "Running setup.sh..."),
         ]:
-            status(f"⏳ {msg}")
+            status(f"󱦟 {msg}")
             w(f"$ {cmd}", "bold yellow")
             proc = subprocess.Popen(
                 cmd, shell=True,
@@ -222,7 +288,7 @@ class OrionInstallScreen(Screen):
                 w("Installation failed.", "bold red")
                 return
 
-        status("✅ Orion installed!")
+        status(" Orion installed!")
         w("Done.", "bold green")
         time.sleep(0.5)
         self.app.call_from_thread(self.dismiss, True)
@@ -230,8 +296,10 @@ class OrionInstallScreen(Screen):
     @work(thread=True)
     def run_voice_install(self, model_choice):
         log = self.query_one("#inst-log", RichLog)
+
         def w(text, style="dim green"):
             self.app.call_from_thread(log.write, Text(text, style))
+
         def status(text):
             self.app.call_from_thread(
                 self.query_one("#inst-status", Static).update, text
@@ -241,7 +309,7 @@ class OrionInstallScreen(Screen):
             ("pkg install -y mpv",           "Installing mpv..."),
             ("pip install edge-tts --quiet", "Installing edge-tts..."),
         ]:
-            status(f"⏳ {msg}")
+            status(f"󱦟 {msg}")
             w(f"$ {cmd}", "bold yellow")
             proc = subprocess.Popen(
                 cmd, shell=True,
@@ -251,22 +319,23 @@ class OrionInstallScreen(Screen):
                 w(line.rstrip())
             proc.wait()
 
-        status("⏳ Cloning Termux-STT...")
-        w(f"$ git clone https://github.com/opsonusdh/Termux-STT {STT_DIR}", "bold yellow")
+        status("󱦟 Cloning Termux-STT...")
+        w(f"$ git clone https://github.com/opsonusdh/Termux-STT {STT_DIR}",
+          "bold yellow")
         proc = subprocess.Popen(
             f"git clone https://github.com/opsonusdh/Termux-STT {STT_DIR}",
-            shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+            shell=True,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
         )
         for line in proc.stdout:
             w(line.rstrip())
         proc.wait()
 
-        status(f"⏳ Running STT setup (model: {model_choice})...")
+        status(f"󱦟 Running STT setup (model: {model_choice})...")
         w(f"$ bash {STT_DIR}/setup.sh  [model={model_choice}]", "bold yellow")
         proc = subprocess.Popen(
             f"bash {STT_DIR}/setup.sh",
-            shell=True,
-            stdin=subprocess.PIPE,
+            shell=True, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
         )
         try:
@@ -281,91 +350,96 @@ class OrionInstallScreen(Screen):
 
         CONFIG["voice_enabled"] = True
         save_orion_config(CONFIG)
-        status("✅ Voice installed!")
+        status(" Voice installed!")
         w("Done.", "bold green")
         time.sleep(0.5)
         self.app.call_from_thread(self.dismiss, True)
 
 
-# ── MAIN ORION SCREEN ─────────────────────────────────────────────
+#  MAIN ORION SCREEN 
 
 class OrionScreen(Screen):
     CSS = ORION_CSS
 
-    _proc       = None
-    _is_running = False
-    _last_line = ""
-
-    TOOLS = [
-        ("run_code",        "💻"),
-        ("save_memory",     "💾"),
-        ("retrieve_memory", "🔍"),
-        ("read_file",       "📄"),
-        ("write_file",      "✏️"),
-        ("web_scrape",      "🌐"),
-        ("sleep_mode",      "😴"),
-    ]
+    _proc          = None
+    _is_running    = False
+    _last_line     = ""
+    _reader_thread = None
 
     def compose(self) -> ComposeResult:
+        #  Top header bar 
         with Horizontal(id="orion-header"):
-            yield Button("← Back",   id="orion-back")
+            yield Button("← Back",   classes="orion-nav-btns", id="orion-back")
             yield Static("◈  ORION  AI  ◈", id="orion-title")
-            yield Button("API Keys", id="orion-apikey-btn")
+            yield Button("API Keys", id="orion-apikey-btn", classes="orion-nav-btns")
 
+        #  Main body: sidebar + embedded terminal window 
         with Horizontal(id="orion-body"):
+
+            # Left sidebar: system stats + tool flash indicators
             with Vertical(id="orion-sidebar"):
-                yield Static("[ SYSTEM ]", id="orion-sys-title")
-                with Horizontal(classes="sys-row"):
-                    yield Static("CPU", classes="sys-key")
-                    yield Static("...", id="sys-cpu", classes="sys-val")
-                with Horizontal(classes="sys-row"):
-                    yield Static("MEM", classes="sys-key")
-                    yield Static("...", id="sys-mem", classes="sys-val")
+                yield Static("[ SYSTEM ]", id="orion-sys-title")              
                 with Horizontal(classes="sys-row"):
                     yield Static("BAT", classes="sys-key")
                     yield Static("...", id="sys-bat", classes="sys-val")
+                with Horizontal(classes="sys-row"):
+                    yield Static("MEM", classes="sys-key")
+                    yield Static("...", id="sys-cpu", classes="sys-val")
+                with Horizontal(classes="sys-row"):
+                    yield Static("RAM", classes="sys-key")
+                    yield Static("...", id="sys-mem", classes="sys-val")
+                
                 yield Static("░" * 18, id="orion-mem-bar")
                 yield Static("[ TOOLS ]", id="orion-tool-title")
-                for name, icon in self.TOOLS:
-                    yield Static(
-                        f"  {icon} {name}",
-                        id=f"tool-{name}",
-                        classes="tool-indicator"
-                    )
+                with ScrollableContainer(id="orion-tool-scroll"):
+                    for name, icon in TOOLS:
+                        yield Static(
+                            f"  {icon} {name}",
+                            id=f"tool-{name}",
+                            classes="tool-indicator"
+                        )
 
             with Vertical(id="orion-panel"):
-                yield RichLog(id="orion-log", markup=True, wrap=True)
+                yield Static(
+                    "● ◌ ◌   ORION TERMINAL",
+                    id="orion-term-titlebar"
+                )
+                
+                yield RichLog(id="orion-log", markup=True, wrap=False)
                 yield Static("●  Ready", id="orion-thinking-bar")
 
-#        with Horizontal(id="orion-input-row"):
-#            yield Static("YOU ▸", id="orion-prompt-label")
-#            yield Input(placeholder="Ask Orion anything...", id="orion-input")
-#            yield Button("Send", id="orion-send")
+        #  Input row: keyboard input sent to subprocess stdin 
+        with Horizontal(id="orion-input-row"):
+            yield Static("YOU ▸", id="orion-prompt-label")
+            yield Input(placeholder="Ask Orion anything...", id="orion-input")
+            yield Button("Send", id="orion-send")
 
     def on_mount(self):
         for cls in ["theme-dark", "theme-light"]:
             if cls in self.app.classes:
                 self.add_class(cls)
+        self._write_log("" * 50, "dim #1a1a3e")
         self._start_orion()
         self.set_interval(3, self._update_stats)
         self._update_stats()
-        self._write_log("◈  ORION  AI  ◈", "bold cyan")
-        self._write_log("Autonomous terminal agent — powered by Gemini", "dim #444466")
-        self._write_log("─" * 50, "dim #1a1a3e")
+        try:
+            self.query_one("#orion-input", Input).focus()
+        except Exception:
+            pass
 
-    # ── stats ─────────────────────────────────────────────────────
+    #  stats 
 
     @work(thread=True)
     def _update_stats(self):
         stats = get_sys_stats()
         def apply():
             try:
-                self.query_one("#sys-cpu", Static).update(stats.get('cpu', 'N/A'))
-                self.query_one("#sys-bat", Static).update(stats.get('bat', 'N/A'))
-                mem_str = stats.get('mem', '0/0GB (0%)')
+                self.query_one("#sys-cpu", Static).update(stats.get("cpu", "N/A"))
+                self.query_one("#sys-bat", Static).update(stats.get("bat", "N/A"))
+                mem_str = stats.get("mem", "0/0GB (0%)")
                 self.query_one("#sys-mem", Static).update(mem_str)
                 try:
-                    pct    = int(re.search(r'\((\d+)%\)', mem_str).group(1))
+                    pct    = int(re.search(r"\((\d+)%\)", mem_str).group(1))
                     filled = int(pct / 100 * 18)
                     bar    = "█" * filled + "░" * (18 - filled)
                     self.query_one("#orion-mem-bar", Static).update(bar)
@@ -375,27 +449,76 @@ class OrionScreen(Screen):
                 pass
         self.app.call_from_thread(apply)
 
-    # ── subprocess ────────────────────────────────────────────────
+    #  subprocess launch 
 
-    @work(thread=True)
     def _start_orion(self):
+        if not os.path.isfile(os.path.join(CORE_DIR, "__main__.py")):
+            self._write_log(
+                f"✗ Orion not found at {CORE_DIR}/__main__.py\n"
+                "  Install Orion first via the launcher.",
+                "bold red"
+            )
+            return
+
         try:
-            subprocess.Popen(
-                ['termux-terminal', '-e',
-                 f'bash -c "cd {ORION_DIR} && python -u core; read"'],
+            self._proc = subprocess.Popen(
+                ["python", "-u", "__main__.py"],
+                cwd=CORE_DIR,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
             )
             self._is_running = True
-            self._write_log("◈ Orion launched in external terminal", "bold cyan")
-            self._write_log("Use the terminal window to interact with Orion.", "dim #444466")
-            self.query_one("#orion-thinking-bar", Static).update(
-                "●  Orion running in terminal"
+            self._write_log(
+                f"◈ Orion started (pid {self._proc.pid}) — AI engine loading...",
+                "bold cyan"
             )
+            self.query_one("#orion-thinking-bar", Static).update(
+                "󱦟  Starting Orion..."
+            )
+
+            # Daemon thread reads subprocess stdout forever
+            self._reader_thread = threading.Thread(
+                target=self._read_output,
+                daemon=True,
+                name="orion-stdout-reader"
+            )
+            self._reader_thread.start()
+
+        except FileNotFoundError:
+            self._write_log(
+                "✗ 'python' not found — install Python: pkg install python",
+                "bold red"
+            )
+            self._is_running = False
         except Exception as e:
-            self._write_log(f"✗ Failed to launch: {e}", "bold red")
+            self._write_log(f"✗ Failed to start Orion: {e}", "bold red")
+            self._is_running = False
 
-    # ── output handler ────────────────────────────────────────────
+    #  stdout reader daemon 
 
-    def _handle_output_line(self, raw_line):
+    def _read_output(self):
+        try:
+            for raw_line in iter(self._proc.stdout.readline, ""):
+                if raw_line:
+                    self._handle_output_line(raw_line)
+        except Exception:
+            pass
+        finally:
+            self._is_running = False
+            try:
+                self.app.call_from_thread(
+                    self.query_one("#orion-thinking-bar", Static).update,
+                    "●  Orion process ended"
+                )
+            except Exception:
+                pass
+
+    #  output routing 
+
+    def _handle_output_line(self, raw_line: str):
         line  = raw_line.rstrip()
         if line == self._last_line and line:
             return
@@ -406,23 +529,14 @@ class OrionScreen(Screen):
         if not clean:
             self.app.call_from_thread(self._write_log, "", "")
             return
-        
 
-
-        # ── tool flash ────────────────────────────────────────────
-        tool_map = {
-            "[MEMORY]":    "retrieve_memory",
-            "[EXECUTING]": "run_code",
-            "[SCRAPING]":  "web_scrape",
-            "[WRITING]":   "write_file",
-            "[READING]":   "read_file",
-        }
-        for prefix, tool in tool_map.items():
+        #  tool flash 
+        for prefix, tool in TOOL_PREFIXES.items():
             if clean.startswith(prefix):
                 self._flash_tool(tool)
                 break
 
-        # ── status bar ────────────────────────────────────────────
+        #  status bar 
         if "[Thinking]" in clean:
             self.app.call_from_thread(
                 self.query_one("#orion-thinking-bar", Static).update,
@@ -431,99 +545,143 @@ class OrionScreen(Screen):
         elif "[Listening...]" in clean:
             self.app.call_from_thread(
                 self.query_one("#orion-thinking-bar", Static).update,
-                "◎  Listening..."
+                "◎  Listening for voice..."
             )
-        elif re.match(r'YOU\s*(\(Voice\))?\s*[>▸]\s*\S', clean):
+        elif re.match(r"YOU\s*(\(Voice\))?\s*[>▸]", clean):
             self.app.call_from_thread(
                 self.query_one("#orion-thinking-bar", Static).update,
                 "⏵  Input received"
             )
-        elif re.match(r'AI\s*[>▸]', clean):
+        elif re.match(r"AI\s*(\(Voice\)|Intermediate\s*)?\s*[>▸]", clean):
             self.app.call_from_thread(
                 self.query_one("#orion-thinking-bar", Static).update,
                 "●  Responding..."
             )
+        elif clean in ("Terminal AI ready. Type 'exit' to quit.",):
+            self.app.call_from_thread(
+                self.query_one("#orion-thinking-bar", Static).update,
+                "●  Ready"
+            )
 
-        # ── EARLY RETURNS — suppress noise using clean text only ──
-
-        # empty YOU > prompt — Orion prints this after receiving input
-        if re.fullmatch(r'YOU\s*(\(Voice\))?\s*[>▸]\s*', clean):
+        #  bare YOU > prompt = AI finished, reset status to Ready 
+        if re.fullmatch(r"YOU\s*(\(Voice\))?\s*[>▸]\s*", clean):
+            self.app.call_from_thread(
+                self.query_one("#orion-thinking-bar", Static).update,
+                "●  Ready"
+            )
             return
 
-        # STT server / calibration noise — use clean to avoid red ANSI
-        if re.match(r'\[server\]|\[calibrate\]|Calibrating', clean):
-            self.app.call_from_thread(self._write_log, clean, "dim #1a2a2a")
-            return
-
-        # model rotation warnings — dim orange, no ANSI markup
-        if re.match(r'Model (exhausted|overloaded)', clean):
-            self.app.call_from_thread(self._write_log, clean, "dim #664400")
-            return
-
-        # ── STYLE and write everything else ───────────────────────
-
-        if any(kw in clean for kw in ['[server]', '[calibrate]', 'Calibrating', 'whisper-server', 'threshold set']):
-            style = "bold magenta"
-        elif clean in ("[OUT]", "[ERR]"):
-            style = "dim #445566"
+        #  choose display style 
+        if re.match(r"AI\s*(Intermediate\s*)?[>▸]", clean):
+            style = "bold green"
+        elif re.match(r"AI\s*\(Voice\)\s*[>▸]", clean):
+            style = "bold green"
+        elif re.match(r"YOU\s*(\(Voice\))?\s*[>▸]", clean):
+            style = "bold cyan"
         elif "[Thinking]" in clean:
             style = "bold yellow"
         elif "[Listening...]" in clean:
             style = "bold cyan"
-        elif re.match(r'YOU\s*(\(Voice\))?\s*[>▸]', clean):
-            style = "bold cyan"
-        elif re.match(r'AI\s*[>▸]', clean):
-            style = "bold green"
-        elif re.match(r'(Error|Exception|Traceback|FAILED)', clean, re.IGNORECASE):
+        elif clean.startswith("[EXECUTING]"):
+            style = "bold magenta"
+        elif re.match(r"\[(MEMORY|READING|WRITING|SCRAPING|MEMORY SAVED|OK|OUT)\]", clean):
+            style = "dim #00aa55"
+        elif re.match(r"\[(ERR|ERROR|EXCEPTION)\]", clean, re.IGNORECASE):
             style = "bold red"
+        elif re.match(r"(Traceback|Error:|Exception:)", clean):
+            style = "bold red"
+        elif re.match(r"\[WARN\]|\[SKIP\]", clean):
+            style = "dim yellow"
+        elif clean.startswith("Terminal AI ready"):
+            style = "bold cyan"
         else:
             style = "dim green"
 
         self.app.call_from_thread(self._write_log, rich or clean, style)
 
-    # ── helpers ───────────────────────────────────────────────────
+    #  helpers 
 
-    def _flash_tool(self, name):
+    def _flash_tool(self, name: str):
         def on():
-            try: self.query_one(f"#tool-{name}").add_class("active")
-            except Exception: pass
+            try:
+                self.query_one(f"#tool-{name}").add_class("active")
+            except Exception:
+                pass
         def off():
-            try: self.query_one(f"#tool-{name}").remove_class("active")
-            except Exception: pass
+            try:
+                self.query_one(f"#tool-{name}").remove_class("active")
+            except Exception:
+                pass
         self.app.call_from_thread(on)
         threading.Timer(2.0, lambda: self.app.call_from_thread(off)).start()
 
+    # Matches Rich markup tags like [bold], [/], [cyan], [bold red], etc.
+    _RICH_TAG_RE = re.compile(
+        r"\[/?(?:bold|dim|italic|underline|strike|reverse|blink|"
+        r"red|green|yellow|blue|magenta|cyan|white|black|"
+        r"bright_\w+|#[0-9a-fA-F]{6}|on\s+\w+|link[^\]]*)[^\]]*\]"
+    )
+
     def _write_log(self, text, style="dim green"):
         try:
-            self.query_one("#orion-log", RichLog).write(Text(text, style))
+            log = self.query_one("#orion-log", RichLog)
+            if self._RICH_TAG_RE.search(text):
+                try:
+                    log.write(text)
+                except Exception:
+                    # Fallback: strip markup tags and write plain
+                    log.write(Text(re.sub(r"\[[^\]]*\]", "", text), style))
+            else:
+                log.write(Text(text, style))
         except Exception:
             pass
 
-    def _send_message(self, text):
-        if not self._is_running or not self._proc:
-            self._write_log("✗ Orion is not running.", "bold red")
+    def _send_message(self, text: str):
+        if not self._is_running or self._proc is None:
+            self._write_log(
+                "✗ Orion is not running. Please wait for it to start.",
+                "bold red"
+            )
             return
         try:
             self._write_log(f"YOU > {text}", "bold cyan")
             self._proc.stdin.write(text + "\n")
             self._proc.stdin.flush()
+        except BrokenPipeError:
+            self._write_log("✗ Orion process closed unexpectedly.", "bold red")
+            self._is_running = False
         except Exception as e:
-            self._write_log(f"✗ {e}", "bold red")
+            self._write_log(f"✗ Send error: {e}", "bold red")
 
-    # ── event handlers ────────────────────────────────────────────
+    def _shutdown_proc(self):
+        self._is_running = False
+        if self._proc is not None:
+            try:
+                self._proc.stdin.close()
+            except Exception:
+                pass
+            try:
+                self._proc.terminate()
+            except Exception:
+                pass
+            self._proc = None
+
+    #  events 
 
     def on_button_pressed(self, event: Button.Pressed):
         bid = str(event.button.id)
         if bid == "orion-back":
-            if self._proc:
-                try: self._proc.terminate()
-                except Exception: pass
+            self._shutdown_proc()
             self.dismiss()
         elif bid == "orion-send":
-            val = self.query_one("#orion-input", Input).value.strip()
-            if val:
-                self._send_message(val)
-                self.query_one("#orion-input", Input).clear()
+            try:
+                val = self.query_one("#orion-input", Input).value.strip()
+                if val:
+                    self._send_message(val)
+                    self.query_one("#orion-input", Input).clear()
+                    self.query_one("#orion-input", Input).focus()
+            except Exception:
+                pass
         elif bid == "orion-apikey-btn":
             self.app.push_screen(OrionApiKeyScreen())
 
@@ -535,7 +693,7 @@ class OrionScreen(Screen):
                 event.input.clear()
 
 
-# ── ENTRY POINT ───────────────────────────────────────────────────
+#  ENTRY / LAUNCH SCREEN 
 
 class OrionLaunchScreen(Screen):
     CSS = ORION_LAUNCH_CSS
@@ -590,7 +748,7 @@ class OrionLaunchScreen(Screen):
         else:
             self.dismiss()
 
-    def _after_voice(self, success):
+    def _after_voice(self, _success):
         self._launch_orion()
 
     def _launch_orion(self):

@@ -392,6 +392,20 @@ MUSIC_PLAYER_CSS="""
 	background: #0a0a0f;
 }
 
+/* header bar */
+#mp-header {
+	height: 4;
+	background: #000020;
+	border-bottom: double #1a1a3e;
+	padding: 0 1;
+}
+#mp-header-title {
+	width: 1fr;
+	color: #00ffff;
+	content-align: center middle;
+	text-style: bold;
+}
+
 /* search bar */
 #mp-searchbar {
 	height: 4;
@@ -413,6 +427,7 @@ MUSIC_PLAYER_CSS="""
 	color: #00ffff;
 	border: tall #1a1a3e;
 	margin-left: 1;
+	padding: 0;
 }
 
 #mp-settings-btn:hover {

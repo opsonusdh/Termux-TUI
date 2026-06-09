@@ -29,7 +29,7 @@ class MusicPlayerSettingsScreen(Screen):
         with VerticalScroll(id="set-scroll"):
             yield Static("▸ SCAN FOLDERS", classes="set-section")
             for d in self._config.get("music_dirs", DEFAULT_MUSIC_DIRS):
-                yield Button(f"  📁 {d}", classes="set-dir-btn", id=f"setdir-{abs(hash(d))}")
+                yield Button(f"   {d}", classes="set-dir-btn", id=f"setdir-{abs(hash(d))}")
             with Horizontal(id="add-or-delete"):
                 yield Button("+ Add Folder", id="set-add-dir")
                 yield Button("- Delete", id="set-delete-dir")
@@ -39,9 +39,9 @@ class MusicPlayerSettingsScreen(Screen):
             with Horizontal(id="set-mode-row"):
                 yield Button("➡ Sequential", id="setmode-sequential",
                              classes="mode-btn" + (" active" if self._config.get("music_mode") == "sequential" else ""))
-                yield Button("🔀 Shuffle",   id="setmode-shuffle",
+                yield Button("󰒟 Shuffle",   id="setmode-shuffle",
                              classes="mode-btn" + (" active" if self._config.get("music_mode") == "shuffle" else ""))
-                yield Button("🔁 Repeat",    id="setmode-repeat",
+                yield Button("󰑖 Repeat",    id="setmode-repeat",
                              classes="mode-btn" + (" active" if self._config.get("music_mode") == "repeat" else ""))
 
             yield Static("▸ BEHAVIOUR", classes="set-section")
@@ -67,7 +67,7 @@ class MusicPlayerSettingsScreen(Screen):
                     self._config['music_dirs'].append(path)
                     scroll = self.query_one("#set-scroll", VerticalScroll)
                     scroll.mount(
-                        Button(f"  📁 {path}", classes="set-dir-btn",
+                        Button(f"   {path}", classes="set-dir-btn",
                                id=f"setdir-{abs(hash(path))}"),
                         before=self.query_one("#add-or-delete")
                     )
@@ -128,7 +128,7 @@ class MusicPlayerSettingsScreen(Screen):
             self._config['music_dirs'].append(path)
             scroll = self.query_one("#set-scroll", VerticalScroll)
             scroll.mount(
-                Button(f"  📁 {path}", classes="set-dir-btn",
+                Button(f"   {path}", classes="set-dir-btn",
                        id=f"setdir-{abs(hash(path))}"),
                 before=self.query_one("#add-or-delete")
             )
@@ -163,9 +163,13 @@ class MusicPlayerScreen(Screen):
 
     def compose(self) -> ComposeResult:
         # Search bar
-        with Horizontal(id="mp-searchbar"):
-            yield Input(placeholder="🔍 Search songs...", id="mp-search")
+        with Horizontal(id="mp-header"):
+            yield Button("← Back", id="mp-back")
+            yield Static("◈  MUSIC PLAYER  ◈", id="mp-header-title")
             yield Button("≡", id="mp-settings-btn")
+
+        with Horizontal(id="mp-searchbar"):
+            yield Input(placeholder=" Search songs...", id="mp-search")
 
         # Search results overlay (hidden by default)
         with VerticalScroll(id="mp-results"):
@@ -280,11 +284,17 @@ class MusicPlayerScreen(Screen):
 
         name = os.path.basename(path)
         def update_ui():
-            self.query_one("#mp-track",          Static).update(name)
-            self.query_one("#mp-status",          Static).update("▶")
-            self.query_one("#mp-playpause",       Button).label = "| |"
-            self.query_one("#mp-nowplaying-bar",  Static).update(f"♫ {name}")
-        self.app.call_from_thread(update_ui)
+            self.query_one("#mp-track",         Static).update(name)
+            self.query_one("#mp-status",         Static).update("▶")
+            self.query_one("#mp-playpause",      Button).label = "| |"
+            self.query_one("#mp-nowplaying-bar", Static).update(f"\uf001 {name}")
+        # _play_idx is called from both the main thread (button press) and
+        # worker threads (_advance). call_from_thread only works from a
+        # worker thread, so fall back to a direct call on the main thread.
+        try:
+            self.app.call_from_thread(update_ui)
+        except RuntimeError:
+            update_ui()
         
 
     def _advance(self):
@@ -334,7 +344,7 @@ class MusicPlayerScreen(Screen):
         gen = self._nav_gen
         for i, path in enumerate(filtered):
             results.mount(Button(
-                f"  🎵  {os.path.basename(path)}",
+                f"    {os.path.basename(path)}",
                 id=f"mpres-{gen}-{i}",
                 classes="mp-result"
             ))

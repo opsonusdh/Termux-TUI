@@ -32,7 +32,7 @@ def type_icon(t):
     if t == "INCOMING":  return "↓"
     if t == "OUTGOING":  return "↑"
     if t == "MISSED":    return "×"
-    return "📞"
+    return ""
 
 def clean_number(n):
     return re.sub(r'[^\d+]', '', n)
@@ -63,6 +63,13 @@ DIALER_CSS="""
 	height: 3;
 	background: #000020;
 	border-bottom: solid #1a1a3e;
+}
+
+#dial-header-title {
+	width: 1fr;
+	color: #00ffff;
+	content-align: center middle;
+	text-style: bold;
 }
 
 #dial-back {

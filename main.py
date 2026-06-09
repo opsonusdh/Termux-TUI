@@ -19,7 +19,7 @@ from utils.apps.music_player import MusicPlayerScreen
 from utils.apps.ytmp3 import YTmp3Screen
 from utils.apps.github_repo_finder import RepoExploreScreen
 from utils.apps.orion import OrionLaunchScreen
-from utils.apps.browser import BrowshScreen
+from utils.apps.browser import BrowserScreen
 
 
 # Loading Config
@@ -41,6 +41,7 @@ class SplashScreen(Screen):
 # IMPORTANT: Please do not enable this. Because that will skip the diagnosis
 #    def on_key(self):
 #        self.dismiss()
+        
     def on_key(self, event) -> None:
         if self._diagnosis_done:
             self.dismiss()
@@ -103,24 +104,24 @@ class TermuxDashboard(App):
         with TabbedContent():
 
             # HOME
-            with TabPane("🏠 Home"):
+            with TabPane(" Home"):
                 with Vertical():
                     with Horizontal(id="info-row"):
                         with Vertical(id="sys-info-box"):
                             yield Static("", id="sys-info")
-                        yield Static("⏳ Loading weather...", id="weather")
+                        yield Static("󱦟 Loading weather...", id="weather")
                     with Horizontal(id="recent"):
                         for prog in get_recent_programs():
                             yield Button(prog, classes="recent-btn")
                     with Horizontal(id="action-row"):
-                        yield Button("📦 Update",  id="update-btn",  variant="success")
+                        yield Button(" Update",  id="update-btn",  variant="success")
                         yield Button("⬇ Install",  id="install-btn", variant="primary")
                     yield Input(placeholder="Package name...",          id="pkg-input")
                     yield Input(placeholder="$ Enter any command...",   id="cmd-input")
                     yield Log(id="log-view")
 
             # PACKAGES 
-            with TabPane("📦 Packages"):
+            with TabPane(" Packages"):
                 with Vertical():
                     with VerticalScroll(id="pkg-scroll"):
                         for tool in TOOLS:
@@ -149,15 +150,15 @@ class TermuxDashboard(App):
 
                     
             # APPS
-            with TabPane("🎮 Apps"):
+            with TabPane(" Apps"):
                 with Grid(id="apps-grid"):
-                    yield Button("📁 File Browser", id="app-files",  classes="apps")
-                    yield Button("🎵 Music Player", id="app-music",  classes="apps")
-                    yield Button("📞 Dialer",       id="app-dialer", classes="apps")
+                    yield Button(" File Browser", id="app-files",  classes="apps")
+                    yield Button(" Music Player", id="app-music",  classes="apps")
+                    yield Button(" Dialer",       id="app-dialer", classes="apps")
                     yield Button("▶ YTmp3",         id="app-ytmp3",  classes="apps")
-                    yield Button("🌍 GitHub",       id="app-github",  classes="apps")
-                    yield Button("🌐 Browser", id="app-browser")
-                    yield Button("♐ Orion AI(coming soon)", id="app-orion")
+                    yield Button(" GitHub",       id="app-github",  classes="apps")
+                    yield Button(" Browser", id="app-browser",  classes="apps")
+                    yield Button("󰧑 Orion AI", id="app-orion",  classes="apps")
                     
 
         yield Footer()
@@ -214,7 +215,7 @@ class TermuxDashboard(App):
             except (ValueError, IndexError):
                 pct = 100
             try:
-                temp = float(self._cached_batt.split('°C')[0].split("🔥")[1].strip()) if "🔥" in self._cached_batt else 0
+                temp = float(self._cached_batt.split('°C')[0].split("")[1].strip()) if "" in self._cached_batt else 0
             except (ValueError, IndexError):
                 temp = 0
             if pct < 20 or temp >= 40:
@@ -246,7 +247,7 @@ class TermuxDashboard(App):
         bid = str(event.button.id)
 
         if bid == "update-btn":
-            self.run_home_cmd(["pkg", "update", "-y"], "📦 Running update...")
+            self.run_home_cmd(["pkg", "update", "-y"], " Running update...")
         elif bid == "install-btn":
             inp = self.query_one("#pkg-input", Input)
             inp.display = True; inp.focus()
@@ -269,10 +270,10 @@ class TermuxDashboard(App):
         elif bid == "app-github":
             self.app.push_screen(RepoExploreScreen())
         elif bid == "app-browser":
-            self.app.push_screen(BrowshScreen())
+            self.app.push_screen(BrowserScreen())
 # ORION TEST 
-#        elif bid == "app-orion":
-#            self.app.push_screen(OrionLaunchScreen())
+        elif bid == "app-orion":
+            self.app.push_screen(OrionLaunchScreen())
 
 
     # INPUT HANDLER
@@ -296,7 +297,7 @@ class TermuxDashboard(App):
         r = subprocess.run(cmd, capture_output=True, text=True)
         for line in (r.stdout + r.stderr).splitlines():
             self.call_from_thread(log.write_line, line)
-        self.call_from_thread(log.write_line, "✅ Done!")
+        self.call_from_thread(log.write_line, " Done!")
 
     @work(thread=True)
     def run_home_shell(self, cmd):
@@ -321,7 +322,7 @@ class TermuxDashboard(App):
             for line in (r.stdout + r.stderr).strip().splitlines():
                 w(f"  {line}", "dim green")
         w("\n" + "─" * 36, "dim #1a1a3e")
-        w(f"✅  {tool['name']} installed!", "bold green")
+        w(f"  {tool['name']} installed!", "bold green")
 
     @work(thread=True)
     def run_sys_cmd(self, cfg):
@@ -347,7 +348,7 @@ class TermuxDashboard(App):
 
         # special: speedtest
         if cfg.get('special') == 'speedtest':
-            w_raw("⏳ Running speedtest, please wait (~30s)...")
+            w_raw("󱦟 Running speedtest, please wait (~30s)...")
             result = run_speedtest()
             for key, val in result.items():
                 w_kv(key, val)

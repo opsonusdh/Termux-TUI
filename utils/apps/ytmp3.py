@@ -6,6 +6,7 @@ from textual import work
 import subprocess, os, re, threading, shutil
 
 from utils.apps.app_utils.ytmp3_utils import *
+from utils.apps.app_utils.music_player_utils import mp_run
 from utils.helpers import to_mmss, load_config
 
 #  PLAYLIST SCREEN 
@@ -210,11 +211,12 @@ class YTmp3Screen(Screen):
     def compose(self) -> ComposeResult:
         with Horizontal(id="yt-header"):
             yield Button("← Back",    id="yt-back")
+            yield Static("◈  YT-MP3  ◈", id="yt-header-title")
             yield Button("♫ Playlists", id="yt-pl-btn")
             yield Button("⚙ Settings",  id="yt-settings-btn")
 
         with Horizontal(id="yt-searchbar"):
-            yield Input(placeholder="🔍 Search YouTube...", id="yt-search")
+            yield Input(placeholder=" Search YouTube...", id="yt-search")
             yield Button("Search", id="yt-search-btn")
 
         with VerticalScroll(id="yt-results"):
@@ -478,7 +480,7 @@ class YTmp3Screen(Screen):
             f"⬇  Saving: {safe[:30]}..."
         )
         ok = yt_download_to_file(track['url'], dest)
-        msg = f"✅ Saved to {dl_dir}" if ok else "✗  Download failed"
+        msg = f" Saved to {dl_dir}" if ok else "✗  Download failed"
         self.app.call_from_thread(
             self.query_one("#yt-np-status", Static).update, msg
         )
