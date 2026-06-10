@@ -3,22 +3,28 @@ from textual.screen import Screen
 from textual.widgets import Button, Static, Input, Switch
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual import work
-import os, random
+import os
+import random
 
-from utils.apps.app_utils.music_player_utils import *
+from utils.apps.app_utils.music_player_utils import (
+    DEFAULT_MUSIC_DIRS, MUSIC_PLAYER_CSS, MUSIC_PLAYER_SETTING_CSS,
+    load_music_config, mp_info, mp_run, save_music_config, scan_music
+)
 from utils.helpers import to_mmss, load_config
 
-# MUSIC SETTINGS SCREEN
 class MusicPlayerSettingsScreen(Screen):
 
     CSS = MUSIC_PLAYER_SETTING_CSS
 
     def __init__(self, config, on_save):
         super().__init__()
-        self._config  = load_music_config()
+        self._config = load_music_config()
+        self._config.update(config or {})
+        self._config["music_dirs"] = list(
+            self._config.get("music_dirs", DEFAULT_MUSIC_DIRS)
+        )
         self._main_config = load_config()
         self._on_save = on_save
-        
         self._selected_dir = None
 
     def compose(self) -> ComposeResult:
@@ -61,7 +67,6 @@ class MusicPlayerSettingsScreen(Screen):
         elif bid == "set-add-dir":
             inp = self.query_one("#set-dir-input", Input)
             if inp.display and inp.value.strip():
-                # input is visible and has text — treat as submit
                 path = inp.value.strip()
                 if path not in self._config['music_dirs']:
                     self._config['music_dirs'].append(path)
@@ -75,10 +80,8 @@ class MusicPlayerSettingsScreen(Screen):
                 inp.display = False
                 event.button.label = "+ Add"
             else:
-                # input is hidden or empty — show it
                 inp.display = True
                 inp.focus()
-                # also change button label to hint
                 event.button.label = "✓ Confirm"
                 
         elif bid.startswith("setmode-"):
@@ -98,7 +101,6 @@ class MusicPlayerSettingsScreen(Screen):
                 dirs = self._config['music_dirs']
                 dirs.remove(self._selected_dir)
                 self._config['music_dirs'] = dirs
-                # remove the widget
                 tag = f"setdir-{abs(hash(self._selected_dir))}"
                 try:
                     self.query_one(f"#{tag}").remove()
@@ -107,10 +109,8 @@ class MusicPlayerSettingsScreen(Screen):
                 self._selected_dir = None
 
         elif bid.startswith("setdir-"):
-            # deselect previous
             for btn in self.query(".set-dir-btn"):
                 btn.remove_class("selected")
-            # select this one — find which dir it maps to
             for d in self._config.get("music_dirs", []):
                 if f"setdir-{abs(hash(d))}" == bid:
                     self._selected_dir = d
@@ -143,8 +143,6 @@ class MusicPlayerSettingsScreen(Screen):
         if event.switch.id == "set-stop-switch":
             self._config['music_stop_on_close'] = event.value
 
-
-# MUSIC PLAYER SCREEN
 class MusicPlayerScreen(Screen):
 
     CSS = MUSIC_PLAYER_CSS
@@ -162,7 +160,6 @@ class MusicPlayerScreen(Screen):
         
 
     def compose(self) -> ComposeResult:
-        # Search bar
         with Horizontal(id="mp-header"):
             yield Button("← Back", id="mp-back")
             yield Static("◈  MUSIC PLAYER  ◈", id="mp-header-title")
@@ -171,11 +168,9 @@ class MusicPlayerScreen(Screen):
         with Horizontal(id="mp-searchbar"):
             yield Input(placeholder=" Search songs...", id="mp-search")
 
-        # Search results overlay (hidden by default)
         with VerticalScroll(id="mp-results"):
             pass
 
-        # Main player
         with Vertical(id="mp-main"):
             yield Static("No track loaded", id="mp-track")
             yield Static("# STOPPED",      id="mp-status")
@@ -188,7 +183,6 @@ class MusicPlayerScreen(Screen):
                 yield Button("▶",   id="mp-playpause")
                 yield Button("⏭ ",   id="mp-next")
 
-        # Bottom bar
         with Horizontal(id="mp-bottombar"):
             yield Button("← Back", id="mp-back")
             yield Static("", id="mp-nowplaying-bar")
@@ -196,13 +190,9 @@ class MusicPlayerScreen(Screen):
     def on_mount(self):
         self.scan_and_load()
         self.set_interval(1, self.tick)
-        self.app.set_theme(self._config.get("theme", "jarvis"))
+        self.app.set_theme(load_config().get("theme", "jarvis"))
         
         
-        
-
-    # scanning
-
     @work(thread=True)
     def scan_and_load(self):
         songs = scan_music(self._config.get("music_dirs", DEFAULT_MUSIC_DIRS))
@@ -213,13 +203,10 @@ class MusicPlayerScreen(Screen):
             f"♫ {len(songs)} songs found"
         )
 
-    # tick: internal clock + periodic sync
-
     @work(thread=True)
     def tick(self):
         self._poll_counter += 1
 
-        # sync from termux every 10s or right after new song starts
         if self._poll_counter % 10 == 1:
             info = mp_info()
             status = info.get('status', 'stopped').lower()
@@ -234,11 +221,9 @@ class MusicPlayerScreen(Screen):
                     self.query_one("#mp-track", Static).update, name
                 )
 
-        # advance internal clock
         if self._is_playing:
             self._pos_sec += 1
 
-        # build UI values
         dur  = max(1, self._dur_sec)
         pos  = min(self._pos_sec, dur)
         
@@ -261,7 +246,6 @@ class MusicPlayerScreen(Screen):
 
         self.app.call_from_thread(update)
         
-        # auto-advance when track ends (in worker thread)
         if self._is_playing and self._dur_sec > 0 \
                 and self._pos_sec >= self._dur_sec:
             self._pos_sec    = 0
@@ -269,7 +253,6 @@ class MusicPlayerScreen(Screen):
             self._is_playing = False
             self._advance()
 
-    # playback logic
     def _play_idx(self, idx: int, song_list=None):
         songs = song_list if song_list is not None else self._all_songs
         if not songs or not (0 <= idx < len(songs)):
@@ -288,9 +271,6 @@ class MusicPlayerScreen(Screen):
             self.query_one("#mp-status",         Static).update("▶")
             self.query_one("#mp-playpause",      Button).label = "| |"
             self.query_one("#mp-nowplaying-bar", Static).update(f"\uf001 {name}")
-        # _play_idx is called from both the main thread (button press) and
-        # worker threads (_advance). call_from_thread only works from a
-        # worker thread, so fall back to a direct call on the main thread.
         try:
             self.app.call_from_thread(update_ui)
         except RuntimeError:
@@ -298,7 +278,6 @@ class MusicPlayerScreen(Screen):
         
 
     def _advance(self):
-        """Auto-advance based on mode."""
         n    = len(self._all_songs)
         mode = self._config.get("music_mode", "sequential")
         if n == 0:
@@ -314,18 +293,21 @@ class MusicPlayerScreen(Screen):
     def _next_idx(self):
         n    = len(self._all_songs)
         mode = self._config.get("music_mode", "sequential")
-        if n == 0: return -1
-        if mode == "shuffle": return random.randint(0, n - 1)
+        if n == 0:
+            return -1
+        if mode == "shuffle":
+            return random.randint(0, n - 1)
         return (self._current_idx + 1) % n
 
     def _prev_idx(self):
         n    = len(self._all_songs)
         mode = self._config.get("music_mode", "sequential")
-        if n == 0: return -1
-        if mode == "shuffle": return random.randint(0, n - 1)
+        if n == 0:
+            return -1
+        if mode == "shuffle":
+            return random.randint(0, n - 1)
         return (self._current_idx - 1) % n
 
-    # search
     def on_input_changed(self, event: Input.Changed):
         if event.input.id != "mp-search":
             return
@@ -348,19 +330,15 @@ class MusicPlayerScreen(Screen):
                 id=f"mpres-{gen}-{i}",
                 classes="mp-result"
             ))
-            results.mount_data = filtered   # store for click handler
         results.add_class("visible")
         self._search_results = filtered
 
     def on_input_submitted(self, event: Input.Submitted):
         if event.input.id == "mp-search":
-            # close search, clear
             results = self.query_one("#mp-results", VerticalScroll)
             results.remove_class("visible")
             results.remove_children()
             event.input.clear()
-
-    # button handler
 
     def on_button_pressed(self, event: Button.Pressed):
         bid = str(event.button.id)
@@ -375,7 +353,6 @@ class MusicPlayerScreen(Screen):
             def on_save(cfg):
                 self._config = cfg
                 save_music_config(cfg)
-                # rescan with new dirs
                 self.scan_and_load()
             self.app.push_screen(MusicPlayerSettingsScreen(self._config, on_save))
 
@@ -391,7 +368,6 @@ class MusicPlayerScreen(Screen):
                 event.button.label = "| |"
                 self.query_one("#mp-status", Static).update("▶  PLAYING")
             else:
-                # nothing loaded — play first
                 if self._all_songs:
                     self._play_idx(0)
 
@@ -402,11 +378,9 @@ class MusicPlayerScreen(Screen):
             self._play_idx(self._next_idx())
 
         elif bid.startswith("mpres-"):
-            # search result clicked
             idx  = int(bid.split("-")[-1])
             songs = getattr(self, '_search_results', [])
             if 0 <= idx < len(songs):
-                # find real index in all_songs
                 path = songs[idx]
                 try:
                     real_idx = self._all_songs.index(path)
@@ -414,7 +388,6 @@ class MusicPlayerScreen(Screen):
                     real_idx = 0
                 self._current_idx = real_idx
                 self._play_idx(real_idx)
-                # close search
                 results = self.query_one("#mp-results", VerticalScroll)
                 results.remove_class("visible")
                 results.remove_children()

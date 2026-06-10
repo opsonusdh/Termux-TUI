@@ -1,6 +1,8 @@
-import subprocess, os, time, json, re, shutil
-
-#  PATHS
+import json
+import os
+import re
+import shutil
+import subprocess
 
 ORION_DIR     = os.path.expanduser("~/Termux-AI")
 CORE_DIR      = os.path.join(ORION_DIR, "core")
@@ -12,14 +14,11 @@ ORION_CONFIG_PATH = os.path.expanduser(
     "~/.termux_tui_orion_config.json"
 )
 
-# Providers supported by Termux-AI (order = display order in the key screen)
 ORION_PROVIDERS = [
     ("google", "GOOGLE", "Required · aistudio.google.com",         "AIza..."),
     ("nvidia", "NVIDIA", "Optional · build.nvidia.com",            "nvapi-..."),
     ("groq",   "GROQ",   "Optional · console.groq.com",            "gsk_..."),
 ]
-
-#  CONFIG SYSTEM
 
 DEFAULT_CONFIG = {
     "first_run": True,
@@ -47,7 +46,6 @@ def save_orion_config(cfg):
 CONFIG = load_orion_config()
 
 TOOLS = [
-    #  core 
     ("run_code",                      ""),
     ("save_memory",                   ""),
     ("retrieve_memory",               ""),
@@ -57,7 +55,6 @@ TOOLS = [
     ("web_scrape",                    ""),
     ("sleep_mode",                    ""),
     ("intermediate_print",            ""),
-    #  whatsapp 
     ("send_whatsapp_message",         ""),
     ("get_whatsapp_status",           ""),
     ("get_pending_whatsapp_messages", ""),
@@ -86,13 +83,10 @@ TOOL_PREFIXES = {
     "[WP PROFILE]":         "set_whatsapp_user_profile",
 }
 
-#  HELPERS
 def orion_installed():
     return (os.path.isdir(ORION_DIR) and
             os.path.isfile(os.path.join(CORE_DIR, "__main__.py")) and
             os.path.isdir(CONFIG_DIR))
-
-#  API key helpers (JSON format) 
 
 def load_api_keys() -> dict:
     empty = {pid: [] for pid, *_ in ORION_PROVIDERS}
@@ -112,7 +106,6 @@ def load_api_keys() -> dict:
                     result[pid] = [keys.strip()]
             return result
         except json.JSONDecodeError:
-            # Legacy plain-text treat all as Google keys
             keys = [l.strip() for l in raw.splitlines() if l.strip()]
             result = {pid: [] for pid, *_ in ORION_PROVIDERS}
             result["google"] = keys
@@ -121,7 +114,6 @@ def load_api_keys() -> dict:
         return empty
 
 def api_keys_exist() -> bool:
-    """True if api.keys exists and has at least one Google key."""
     try:
         data = load_api_keys()
         return len(data.get("google", [])) > 0
@@ -129,13 +121,8 @@ def api_keys_exist() -> bool:
         return False
 
 def save_api_keys(keys_by_provider: dict) -> bool:
-    """
-    Write API keys to api.keys in JSON format.
-    keys_by_provider: {"google": [...], "nvidia": [...], "groq": [...]}
-    """
     try:
         os.makedirs(CONFIG_DIR, exist_ok=True)
-        # Only keep non-empty lists
         cleaned = {
             pid: [k.strip() for k in klist if k.strip()]
             for pid, klist in keys_by_provider.items()
@@ -209,10 +196,6 @@ def get_sys_stats():
     except Exception:
         stats['cpu'] = "N/A"
     return stats
-
-
-#  STT WHISPER MODELS 
-# Maps display label → choice number to pipe into setup.sh stdin
 
 STT_MODELS = [
     ("tiny    (~75MB)  — fastest, low accuracy",   "1"),

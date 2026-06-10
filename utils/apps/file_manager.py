@@ -4,9 +4,11 @@ from textual.widgets import Button, Static, Input, RichLog
 from textual.containers import Horizontal, VerticalScroll, Vertical
 from textual import work
 from rich.text import Text
-import subprocess, os, time
+import os
+import subprocess
+import time
 
-from utils.apps.app_utils.file_manager_utils import *
+from utils.apps.app_utils.file_manager_utils import FILE_EXPLORER_CSS, ICONS
 from utils.helpers import load_config, fmt_size
 
 
@@ -47,8 +49,10 @@ class FileBrowserScreen(Screen):
             self.query_one("#file-path-display", Static).update,
             f"   {path}"
         )
-        try:    entries = sorted(os.listdir(path))
-        except: entries = []
+        try:
+            entries = sorted(os.listdir(path))
+        except OSError:
+            entries = []
 
         dirs  = [e for e in entries if os.path.isdir(os.path.join(path, e))]
         files = [e for e in entries if not os.path.isdir(os.path.join(path, e))]
@@ -56,9 +60,11 @@ class FileBrowserScreen(Screen):
         file_entries = {}
         idx = 0
         for d in dirs:
-            file_entries[idx] = os.path.join(path, d); idx += 1
+            file_entries[idx] = os.path.join(path, d)
+            idx += 1
         for f in files:
-            file_entries[idx] = os.path.join(path, f); idx += 1
+            file_entries[idx] = os.path.join(path, f)
+            idx += 1
 
         def rebuild():
             self._file_entries = file_entries
@@ -72,8 +78,10 @@ class FileBrowserScreen(Screen):
                 ))
                 i += 1
             for f in files:
-                try:    size = fmt_size(os.path.getsize(os.path.join(path, f)))
-                except: size = "?"
+                try:
+                    size = fmt_size(os.path.getsize(os.path.join(path, f)))
+                except OSError:
+                    size = "?"
                 ext  = f.split(".")[-1].lower() if "." in f else ""
                 icon = ICONS.get(ext, "")
                 scroll.mount(Button(
@@ -112,10 +120,12 @@ class FileBrowserScreen(Screen):
             if size > 50000:
                 w(f"⚠ Large file ({fmt_size(size)}) — first 100 lines", "bold yellow")
                 r = subprocess.run(['head','-100', path], capture_output=True, text=True)
-                for line in r.stdout.splitlines(): w(f"  {line}", "dim green")
+                for line in r.stdout.splitlines():
+                    w(f"  {line}", "dim green")
             else:
                 with open(path, 'r', errors='replace') as f:
-                    for line in f.readlines()[:300]: w(f"  {line.rstrip()}", "dim green")
+                    for line in f.readlines()[:300]:
+                        w(f"  {line.rstrip()}", "dim green")
         except Exception as e:
             w(f"✗ {e}", "bold red")
 
@@ -139,7 +149,8 @@ class FileBrowserScreen(Screen):
                 self.open_file(target)
 
     def on_input_submitted(self, event: Input.Submitted):
-        if event.input.id != "file-input": return
+        if event.input.id != "file-input":
+            return
         val    = event.value.strip()
         target = val if os.path.isabs(val) else os.path.join(self._current_path, val)
         target = os.path.normpath(target)

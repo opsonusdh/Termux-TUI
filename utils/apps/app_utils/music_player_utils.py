@@ -1,6 +1,8 @@
-import os, json, subprocess
+import json
+import os
+import subprocess
 
-MUSIC_CONFIG_PATH = os.path.expanduser(".termux_tui_music_config.json")
+MUSIC_CONFIG_PATH = os.path.expanduser("~/.termux_tui_music_config.json")
 DEFAULT_MUSIC_DIRS=[ 
 	os.path.expanduser("~/storage/music"),
 	os.path.expanduser("~/storage/audio")
@@ -16,20 +18,23 @@ MUSIC_EXTENSIONS= {
 }
 
 def load_music_config():
+    default = {
+        "music_dirs": list(DEFAULT_MUSIC_DIRS),
+        "music_mode": "sequential",
+        "music_stop_on_close": False,
+    }
     try:
-        with open(MUSIC_CONFIG_PATH) as f:
-            return json.load(f)
-    except Exception:
-        return {
-            "music_dirs": DEFAULT_MUSIC_DIRS, 
-            "music_mode": "sequential", 
-            "music_stop_on_close": False
-        }
+        with open(MUSIC_CONFIG_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        return {**default, **data}
+    except (json.JSONDecodeError, OSError):
+        return default
+
 def save_music_config(cfg):
     try:
-        with open(MUSIC_CONFIG_PATH, 'w') as f:
+        with open(MUSIC_CONFIG_PATH, "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=2)
-    except Exception:
+    except OSError:
         pass
         
 def scan_music(dirs):
@@ -75,7 +80,7 @@ def mp_info():
     return result
     
 MUSIC_PLAYER_SETTING_CSS="""
- SettingsScreen {
+ MusicPlayerSettingsScreen {
 	background: #0a0a0f;
 }
 

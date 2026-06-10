@@ -1,36 +1,52 @@
-import os, json, subprocess
+import json
+import os
+import subprocess
 
-YT_CONFIG_PATH=os.path.expanduser(".termux_tui_yt_config.json") 
-TEMP_DIR=os.path.join(os.path.expanduser(".termux_tui_temp"), "yt") 
+YT_CONFIG_PATH = os.path.expanduser("~/.termux_tui_yt_config.json")
+TEMP_DIR = os.path.join(os.path.expanduser("~/.termux_tui_temp"), "yt")
 os.makedirs(TEMP_DIR, exist_ok=True) 
 TEMP_CURR=os.path.join(TEMP_DIR, "current.mp3") 
 TEMP_NEXT=os.path.join(TEMP_DIR, "next.mp3") 
 TEMP_PREV=os.path.join(TEMP_DIR, "prev.mp3") 
 DEFAULT_YT_DOWNLOAD_DIR=os.path.expanduser("~/YouTube")
 
+def _read_json(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
 def load_yt_config():
-    """Load YouTube music configuration from file."""
+    default = {
+        "playlists": {},
+        "download_dir": DEFAULT_YT_DOWNLOAD_DIR,
+        "temp_dir": TEMP_DIR,
+        "config_path": YT_CONFIG_PATH,
+    }
     try:
-        with open(YT_CONFIG_PATH) as f:
-            return json.load(f)
-    except Exception:
-        return {
-            "playlists": {},
-            "download_dir": DEFAULT_YT_DOWNLOAD_DIR,
-        }
+        data = _read_json(YT_CONFIG_PATH)
+        config_path = os.path.expanduser(data.get("config_path", YT_CONFIG_PATH))
+        if config_path != YT_CONFIG_PATH and os.path.exists(config_path):
+            data = {**data, **_read_json(config_path)}
+        return {**default, **data}
+    except (json.JSONDecodeError, OSError):
+        return default
 
 
 def save_yt_config(cfg):
-    """Save YouTube music configuration to file."""
     try:
-        with open(YT_CONFIG_PATH, 'w') as f:
+        path = os.path.expanduser(cfg.get("config_path", YT_CONFIG_PATH))
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=2)
-    except Exception:
+        if path != YT_CONFIG_PATH:
+            with open(YT_CONFIG_PATH, "w", encoding="utf-8") as f:
+                json.dump({"config_path": path}, f, indent=2)
+    except OSError:
         pass
 
 
 def yt_search(query, limit=10, offset=0):
-    """Search YouTube using yt-dlp, return list of track dicts."""
     search_query = f"ytsearch{limit + offset}:{query}"
     try:
         r = subprocess.run([
@@ -50,27 +66,25 @@ def yt_search(query, limit=10, offset=0):
                     'uploader': data.get('uploader', ''),
                     'url':      f"https://www.youtube.com/watch?v={data.get('id','')}",
                 })
-            except Exception:
+            except (KeyError, json.JSONDecodeError, TypeError):
                 continue
         return results[offset:]
-    except Exception:
+    except (OSError, subprocess.SubprocessError):
         return []
 
 
 def yt_get_audio_url(yt_url):
-    """Get direct audio stream URL from YouTube (no download needed for streaming)."""
     try:
         r = subprocess.run([
             'yt-dlp', '-f', 'bestaudio[ext=m4a]/bestaudio/best',
             '--get-url', '--no-warnings', '--quiet', yt_url
         ], capture_output=True, text=True, timeout=20)
         return r.stdout.strip().splitlines()[0] if r.stdout.strip() else None
-    except Exception:
+    except (IndexError, OSError, subprocess.SubprocessError):
         return None
 
 
 def yt_download_to_file(yt_url, output_path):
-    """Download best audio as mp3 to output_path. Returns True on success."""
     try:
         base = output_path.replace('.mp3', '')
         r = subprocess.run([
@@ -83,15 +97,10 @@ def yt_download_to_file(yt_url, output_path):
             yt_url
         ], capture_output=True, text=True, timeout=120)
         return r.returncode == 0
-    except Exception:
+    except (OSError, subprocess.SubprocessError):
         return False
 
 def yt_fetch_radio(video_id, limit=25):
-    """
-    Fetch YouTube's algorithmic Radio mix for a video.
-    URL format https://youtube.com/watch?v=ID&list=RDID is YouTube's
-    own recommendation engine — same algo as Watch Next autoplay.
-    """
     radio_url = f"https://www.youtube.com/watch?v={video_id}&list=RD{video_id}"
     try:
         r = subprocess.run([
@@ -107,7 +116,7 @@ def yt_fetch_radio(video_id, limit=25):
                 data   = json.loads(line)
                 vid_id = data.get('id', '')
                 if not vid_id or vid_id == video_id:
-                    continue   # skip seed track
+                    continue
                 results.append({
                     'id':       vid_id,
                     'title':    data.get('title', 'Unknown'),
@@ -115,10 +124,10 @@ def yt_fetch_radio(video_id, limit=25):
                     'uploader': data.get('uploader', ''),
                     'url':      f"https://www.youtube.com/watch?v={vid_id}",
                 })
-            except Exception:
+            except (KeyError, json.JSONDecodeError, TypeError):
                 continue
         return results
-    except Exception:
+    except (OSError, subprocess.SubprocessError):
         return []
 
 # CSS

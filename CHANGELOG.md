@@ -8,26 +8,26 @@ All notable changes to Termux-TUI will be documented here.
 
 ### Added
 
-**Orion AI — pushed to TUI** *(new: `utils/apps/orion.py`, `utils/apps/app_utils/orion_utils.py`)*
+**Orion integration** *(new: `utils/apps/orion.py`, `utils/apps/app_utils/orion_utils.py`)*
 - `OrionScreen`: embedded terminal sub-screen approach — Termux-AI (`core/__main__.py`) is launched as a real subprocess with fully-piped stdin/stdout. The `RichLog` panel acts as the terminal screen; the input row sends keystrokes directly to the subprocess's stdin. No external terminal emulator is involved
 - Subprocess is launched as `python -u __main__.py` with `cwd=CORE_DIR` (`~/Termux-AI/core/`) — necessary because `core/__main__.py` uses flat imports (`from interface import`, `from tools import *`) that only resolve when `core/` is on `sys.path`
 - `OrionApiKeyScreen`: multi-provider tabbed API key setup — GOOGLE / NVIDIA / GROQ tabs, each with its own key list and input row. Keys saved to `api.keys` in JSON format `{"google": [...], "nvidia": [...], "groq": [...]}`
 - `CONFIG_DIR` (`~/Termux-AI/config/`) added to `orion_utils.py` mirroring `Termux-AI/paths.py` — `API_KEYS_PATH` now points to `config/api.keys` following the updated Termux-AI structure. `orion_installed()` checks `config/` exists; `save_api_keys()` creates it
 - Tool sidebar lists all 16 tools directly from `TOOLS_DESCRIPTION` in `core/tools.py` (run_code, save_memory, retrieve_memory, read_file, write_file, index_files, web_scrape, sleep_mode, intermediate_print, and all 6 WhatsApp tools) — each with a Nerd Font icon, wrapped in `ScrollableContainer` with `width: auto` for horizontal scrolling
-- `_handle_output_line`: Rich markup tags (`[bold]`, `[/]`, etc.) emitted by the AI renderer when stdout is a pipe are now parsed correctly — detected via `_RICH_TAG_RE` and written as plain strings to `RichLog(markup=True)` instead of being wrapped in `Text()` which treated them literally
-- Status bar auto-resets to `● Ready` when the bare `YOU >` prompt is detected (signals AI has finished responding and is waiting for input)
+- `_handle_output_line`: Rich markup tags (`[bold]`, `[/]`, etc.) emitted by the Orion renderer when stdout is a pipe are now parsed correctly — detected via `_RICH_TAG_RE` and written as plain strings to `RichLog(markup=True)` instead of being wrapped in `Text()` which treated them literally
+- Status bar auto-resets to `● Ready` when the bare `YOU >` prompt is detected (signals Orion has finished responding and is waiting for input)
 - `OrionInstallScreen`, `OrionApiKeyScreen`, `OrionLaunchScreen`, `OrionScreen`: full dark and light theme CSS added for every element in all four screens
 
 **Browser — upgraded** *(changed: `utils/apps/browser.py` and `utils/apps/app_utils/browser_utils.py`)*
 - `BrowshScreen` replaced by `BrowserScreen` supporting five text browsers: browsh → w3m → lynx → links → elinks, tried in priority order
 - Auto-detects which browsers are installed on launch; tab strip shows available (green) vs missing (dim) — click to switch active browser
-- Per-browser shell command built correctly (`browsh --startup-url`, `w3m`, `lynx`, etc.)
+- Per-browser command arguments built without interpolating the URL into a shell string
 - `BrowshScreen = BrowserScreen` alias retained for backward compatibility
 - Full dark and light theme CSS added for tab strip, tabs, status bar, install hint, and back button
 
 **App icon themes** *(changed: `utils/constants.py`)*
 - Dark theme icons added for all apps
-- Light theme icons added for orion
+- Light theme icons added for Orion
 
 ### Changed
 
@@ -38,7 +38,7 @@ All notable changes to Termux-TUI will be documented here.
 ### Fixed
 
 **`utils/apps/ytmp3.py`**
-- `mp_run` was called on the back button press but never imported — caused `NameError: name 'mp_run' is not defined` on exit. Added `from utils.apps.app_utils.music_player_utils import mp_run`
+- `mp_info` was used without being imported, which broke playback status updates. Added the missing import from `music_player_utils`.
 
 **`utils/apps/music_player.py`**
 - `_play_idx()` called `self.app.call_from_thread(update_ui)` unconditionally — raises `RuntimeError: The call_from_thread method must run in a different thread` when invoked from the main thread via a button press. Fixed with a `try/except RuntimeError` fallback that calls `update_ui()` directly when already on the main thread

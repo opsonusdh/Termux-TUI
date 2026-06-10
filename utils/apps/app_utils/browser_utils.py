@@ -1,4 +1,4 @@
-import subprocess
+import shutil
 
 BROWSERS = [
     ("browsh",  "browsh",       "pkg install browsh"),
@@ -9,8 +9,7 @@ BROWSERS = [
 ]
 
 def _which(cmd):
-    r = subprocess.run(["which", cmd], capture_output=True, text=True)
-    return r.returncode == 0
+    return shutil.which(cmd) is not None
 
 def _detect_browser():
     for cmd, name, _ in BROWSERS:

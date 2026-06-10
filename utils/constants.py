@@ -1,5 +1,8 @@
-import shutil, os, subprocess
-from utils import *
+import os
+import shutil
+import subprocess
+
+from utils import VERSION
 
 
 def _make_splash(version): 
@@ -36,21 +39,26 @@ FONT_PATH    = os.path.join(FONT_DIR, "font.ttf")
 FONT_BAK     = os.path.join(FONT_DIR, "font.bak")
 TUI_FONT     = os.path.join(os.path.dirname(__file__), "../termux-tui-font.bak")
 
+def _reload_termux_settings():
+    if shutil.which("termux-reload-settings"):
+        subprocess.run(["termux-reload-settings"], capture_output=True)
+
 def setup_font():
     os.makedirs(FONT_DIR, exist_ok=True)
     if not os.path.isfile(TUI_FONT):
-        raise Exception(TUI_FONT)
-    if os.path.isfile(FONT_PATH):
-        shutil.move(FONT_PATH, FONT_BAK)
+        return False
+    if os.path.isfile(FONT_PATH) and not os.path.isfile(FONT_BAK):
+        shutil.copy2(FONT_PATH, FONT_BAK)
     shutil.copy2(TUI_FONT, FONT_PATH)
-    subprocess.run(['termux-reload-settings'], capture_output=True)
+    _reload_termux_settings()
+    return True
 
 def restore_font():
     if os.path.isfile(FONT_PATH):
         os.remove(FONT_PATH)
     if os.path.isfile(FONT_BAK):
         shutil.move(FONT_BAK, FONT_PATH)
-    subprocess.run(['termux-reload-settings'], capture_output=True)
+    _reload_termux_settings()
 
 # CONSTANTS 
 BASIC_COMMANDS= {
@@ -321,7 +329,7 @@ SYSTEM_CMDS=[
     },
 ] 
 
-CONFIG_PATH=os.path.expanduser(".termux_tui_config.json")
+CONFIG_PATH = os.path.expanduser("~/.termux_tui_config.json")
 
 
 

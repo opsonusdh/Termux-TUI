@@ -82,26 +82,6 @@ GITHUB_CSS = """
 	padding: 0 1;
 }
 
-/*
-    .repo-card {
-        layout: horizontal;
-        height: auto;
-        min-height: 7;
-        padding: 1;
-        margin-bottom: 1;
-        border: tall $surface;
-    }
-
-    .repo-meta-block {
-        width: 1fr;
-        height: auto;
-    }
-
-    .repo-actions {
-        width: 12;
-        align: right middle;
-    }
-*/
 .repo-card {
 	layout: horizontal;
 	height: 9;
@@ -111,14 +91,16 @@ GITHUB_CSS = """
 }
 
 .repo-actions {
-	width: 12;
+	width: 18;
 	height: 100%;
+	align: right middle;
 	content-align: center middle;
 }
 
 .repo-open {
-	width: 10;
+	width: 8;
 	height: 3;
+	margin-left: 1;
 }
 
 .repo-meta-block {
@@ -139,16 +121,6 @@ GITHUB_CSS = """
 	color: gray;
 }
 
-
-.repo-actions {
-	width: 18;
-	align: right middle;
-}
-
-.repo-open {
-	width: 8;
-	margin-left: 1;
-}
 
 #repo-footer {
 	height: 3;
@@ -419,7 +391,7 @@ TIME_FILTERS = [
 
 CATEGORY_FILTERS = [
     ("all", "All"),
-    ("ai", "AI"),
+    ("ai", "Machine Learning"),
     ("security", "Cybersecurity"),
     ("android", "Android"),
     ("termux", "Termux"),

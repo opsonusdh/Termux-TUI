@@ -1,7 +1,9 @@
-import os, re, subprocess, json
-from .constants import (
-    BASIC_COMMANDS, CONFIG_PATH
-)
+import json
+import os
+import re
+import subprocess
+
+from .constants import BASIC_COMMANDS, CONFIG_PATH
 
 def strip_ansi(text):
     return re.sub(r'\x1b(?:[@-Z\\-_]|\[[0-9;]*[ -/]*[@-~])', '', text)
@@ -11,7 +13,7 @@ def get_recent_programs(n=4):
     try:
         with open(history_file, 'r', errors='ignore') as f:
             lines = f.readlines()
-    except:
+    except OSError:
         return ["nmap", "git", "curl"]
     seen, seen_cmds = [], set()
     for line in reversed(lines):
@@ -37,7 +39,7 @@ def get_battery():
         if isinstance(temp, (int, float)) and temp >= 40:
             s += f"  {temp}°C"
         return s
-    except:
+    except (json.JSONDecodeError, subprocess.SubprocessError, OSError):
         return "N/A"
 
 def get_memory():
@@ -50,7 +52,7 @@ def get_memory():
         total = info['MemTotal'] / 1024 / 1024
         used  = total - info['MemAvailable'] / 1024 / 1024
         return f"{used:.1f}/{total:.1f}GB ({int(used/total*100)}%)"
-    except:
+    except (KeyError, OSError, ValueError):
         return "N/A"
 
 def run_speedtest():
@@ -83,7 +85,8 @@ def fmt_speed(bps):
 
 def fmt_size(n):
     for u in ['B','KB','MB','GB']:
-        if n < 1024: return f"{n:.0f}{u}"
+        if n < 1024:
+            return f"{n:.0f}{u}"
         n /= 1024
     return f"{n:.1f}TB"
 
@@ -95,33 +98,37 @@ def flatten_json(data, prefix=""):
     if isinstance(data, dict):
         for k, v in data.items():
             key = f"{prefix}.{k}" if prefix else str(k)
-            if isinstance(v, (dict, list)): out.extend(flatten_json(v, key))
-            else: out.append((key, str(v)))
+            if isinstance(v, (dict, list)):
+                out.extend(flatten_json(v, key))
+            else:
+                out.append((key, str(v)))
     elif isinstance(data, list):
         for i, item in enumerate(data):
             if i > 0:
                 out.append(SEPARATOR)   # separator between items
             key = f"{prefix}[{i}]"
-            if isinstance(item, (dict, list)): out.extend(flatten_json(item, key))
-            else: out.append((key, str(item)))
+            if isinstance(item, (dict, list)):
+                out.extend(flatten_json(item, key))
+            else:
+                out.append((key, str(item)))
     return out
 
         
 def load_config():
+    default = {"theme": "jarvis"}
     try:
-        with open(CONFIG_PATH) as f:
-            return json.load(f)
-    except Exception:
-        return {
-            "theme": "jarvis"
-            }
+        with open(CONFIG_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        return {**default, **data}
+    except (json.JSONDecodeError, OSError):
+        return default
 
 
 def save_config(cfg):
     try:
-        with open(CONFIG_PATH, 'w') as f:
+        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=2)
-    except Exception:
+    except OSError:
         pass
 
 

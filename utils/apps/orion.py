@@ -16,19 +16,14 @@ from utils.apps.app_utils.orion_utils import (
 )
 
 
-#  API KEY SCREEN  (multi-provider tabbed) 
-
 class OrionApiKeyScreen(Screen):
     CSS = ORION_APIKEY_CSS
 
     def __init__(self):
         super().__init__()
-        # keys_by_provider: {pid: [key, ...]}
         self._keys       = load_api_keys()
         self._active_pid = ORION_PROVIDERS[0][0]
         self._gen        = 0
-
-    #  layout 
 
     def compose(self) -> ComposeResult:
         with Vertical(id="api-box"):
@@ -42,19 +37,15 @@ class OrionApiKeyScreen(Screen):
                 id="api-desc"
             )
 
-            # Provider tab strip
             with Horizontal(id="api-tab-strip"):
                 for pid, label, _hint, _ph in ORION_PROVIDERS:
                     yield Button(label, id=f"apitab-{pid}", classes="api-tab")
 
-            # Hint for the active provider
             yield Static("", id="api-provider-hint")
 
-            # Key list scroll area
             with VerticalScroll(id="api-keys-scroll"):
                 pass
 
-            # Input row
             with Horizontal(id="api-input-row"):
                 yield Input(placeholder="Paste key here...", id="api-input")
                 yield Button("+ Add", id="api-add")
@@ -66,30 +57,23 @@ class OrionApiKeyScreen(Screen):
     def on_mount(self):
         self._switch_tab(self._active_pid)
 
-    #  tab switching 
-
     def _switch_tab(self, pid: str):
         self._active_pid = pid
-        # Update tab button styles
         for p, *_ in ORION_PROVIDERS:
             try:
                 btn = self.query_one(f"#apitab-{p}", Button)
                 btn.add_class("active") if p == pid else btn.remove_class("active")
             except Exception:
                 pass
-        # Update hint text
         for p, _label, hint, _ph in ORION_PROVIDERS:
             if p == pid:
                 self.query_one("#api-provider-hint", Static).update(f"  {hint}")
                 break
-        # Refresh input placeholder
         for p, _label, _hint, ph in ORION_PROVIDERS:
             if p == pid:
                 self.query_one("#api-input", Input).placeholder = f"Paste key ({ph})"
                 break
         self._refresh_keys()
-
-    #  key list rendering 
 
     def _refresh_keys(self):
         self._gen += 1
@@ -131,7 +115,6 @@ class OrionApiKeyScreen(Screen):
             self._do_save()
 
         elif bid.startswith("apidel-"):
-            # format: apidel-{gen}-{pid}-{idx}
             parts = bid.split("-")
             if len(parts) >= 4:
                 del_pid = parts[2]
@@ -180,8 +163,6 @@ class OrionApiKeyScreen(Screen):
             )
 
 
-#  INSTALL SCREEN 
-
 class OrionInstallScreen(Screen):
     CSS = ORION_INSTALLER_CSS
 
@@ -195,7 +176,7 @@ class OrionInstallScreen(Screen):
             if self._mode == "install":
                 yield Static("◈  ORION  ◈\nInstalling Termux-AI...", id="inst-title")
                 yield Static(
-                    "Orion AI is not installed.\n"
+                    "Orion is not installed.\n"
                     "This will clone the repo and run setup.sh",
                     id="inst-desc"
                 )
@@ -355,9 +336,6 @@ class OrionInstallScreen(Screen):
         time.sleep(0.5)
         self.app.call_from_thread(self.dismiss, True)
 
-
-#  MAIN ORION SCREEN 
-
 class OrionScreen(Screen):
     CSS = ORION_CSS
 
@@ -367,16 +345,13 @@ class OrionScreen(Screen):
     _reader_thread = None
 
     def compose(self) -> ComposeResult:
-        #  Top header bar 
         with Horizontal(id="orion-header"):
             yield Button("← Back",   classes="orion-nav-btns", id="orion-back")
-            yield Static("◈  ORION  AI  ◈", id="orion-title")
+            yield Static("◈  ORION  ◈", id="orion-title")
             yield Button("API Keys", id="orion-apikey-btn", classes="orion-nav-btns")
 
-        #  Main body: sidebar + embedded terminal window 
         with Horizontal(id="orion-body"):
 
-            # Left sidebar: system stats + tool flash indicators
             with Vertical(id="orion-sidebar"):
                 yield Static("[ SYSTEM ]", id="orion-sys-title")              
                 with Horizontal(classes="sys-row"):
@@ -408,7 +383,6 @@ class OrionScreen(Screen):
                 yield RichLog(id="orion-log", markup=True, wrap=False)
                 yield Static("●  Ready", id="orion-thinking-bar")
 
-        #  Input row: keyboard input sent to subprocess stdin 
         with Horizontal(id="orion-input-row"):
             yield Static("YOU ▸", id="orion-prompt-label")
             yield Input(placeholder="Ask Orion anything...", id="orion-input")
@@ -426,8 +400,6 @@ class OrionScreen(Screen):
             self.query_one("#orion-input", Input).focus()
         except Exception:
             pass
-
-    #  stats 
 
     @work(thread=True)
     def _update_stats(self):
@@ -448,8 +420,6 @@ class OrionScreen(Screen):
             except Exception:
                 pass
         self.app.call_from_thread(apply)
-
-    #  subprocess launch 
 
     def _start_orion(self):
         if not os.path.isfile(os.path.join(CORE_DIR, "__main__.py")):
@@ -472,14 +442,13 @@ class OrionScreen(Screen):
             )
             self._is_running = True
             self._write_log(
-                f"◈ Orion started (pid {self._proc.pid}) — AI engine loading...",
+                f"◈ Orion started (pid {self._proc.pid}) — engine loading...",
                 "bold cyan"
             )
             self.query_one("#orion-thinking-bar", Static).update(
                 "󱦟  Starting Orion..."
             )
 
-            # Daemon thread reads subprocess stdout forever
             self._reader_thread = threading.Thread(
                 target=self._read_output,
                 daemon=True,
@@ -496,8 +465,6 @@ class OrionScreen(Screen):
         except Exception as e:
             self._write_log(f"✗ Failed to start Orion: {e}", "bold red")
             self._is_running = False
-
-    #  stdout reader daemon 
 
     def _read_output(self):
         try:
@@ -516,8 +483,6 @@ class OrionScreen(Screen):
             except Exception:
                 pass
 
-    #  output routing 
-
     def _handle_output_line(self, raw_line: str):
         line  = raw_line.rstrip()
         if line == self._last_line and line:
@@ -530,13 +495,11 @@ class OrionScreen(Screen):
             self.app.call_from_thread(self._write_log, "", "")
             return
 
-        #  tool flash 
         for prefix, tool in TOOL_PREFIXES.items():
             if clean.startswith(prefix):
                 self._flash_tool(tool)
                 break
 
-        #  status bar 
         if "[Thinking]" in clean:
             self.app.call_from_thread(
                 self.query_one("#orion-thinking-bar", Static).update,
@@ -563,7 +526,6 @@ class OrionScreen(Screen):
                 "●  Ready"
             )
 
-        #  bare YOU > prompt = AI finished, reset status to Ready 
         if re.fullmatch(r"YOU\s*(\(Voice\))?\s*[>▸]\s*", clean):
             self.app.call_from_thread(
                 self.query_one("#orion-thinking-bar", Static).update,
@@ -571,7 +533,6 @@ class OrionScreen(Screen):
             )
             return
 
-        #  choose display style 
         if re.match(r"AI\s*(Intermediate\s*)?[>▸]", clean):
             style = "bold green"
         elif re.match(r"AI\s*\(Voice\)\s*[>▸]", clean):
@@ -599,8 +560,6 @@ class OrionScreen(Screen):
 
         self.app.call_from_thread(self._write_log, rich or clean, style)
 
-    #  helpers 
-
     def _flash_tool(self, name: str):
         def on():
             try:
@@ -615,7 +574,6 @@ class OrionScreen(Screen):
         self.app.call_from_thread(on)
         threading.Timer(2.0, lambda: self.app.call_from_thread(off)).start()
 
-    # Matches Rich markup tags like [bold], [/], [cyan], [bold red], etc.
     _RICH_TAG_RE = re.compile(
         r"\[/?(?:bold|dim|italic|underline|strike|reverse|blink|"
         r"red|green|yellow|blue|magenta|cyan|white|black|"
@@ -629,7 +587,6 @@ class OrionScreen(Screen):
                 try:
                     log.write(text)
                 except Exception:
-                    # Fallback: strip markup tags and write plain
                     log.write(Text(re.sub(r"\[[^\]]*\]", "", text), style))
             else:
                 log.write(Text(text, style))
@@ -666,8 +623,6 @@ class OrionScreen(Screen):
                 pass
             self._proc = None
 
-    #  events 
-
     def on_button_pressed(self, event: Button.Pressed):
         bid = str(event.button.id)
         if bid == "orion-back":
@@ -691,9 +646,6 @@ class OrionScreen(Screen):
             if val:
                 self._send_message(val)
                 event.input.clear()
-
-
-#  ENTRY / LAUNCH SCREEN 
 
 class OrionLaunchScreen(Screen):
     CSS = ORION_LAUNCH_CSS

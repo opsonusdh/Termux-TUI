@@ -1,22 +1,25 @@
-import subprocess, re, json
+import json
+import re
+import subprocess
+
 def run_cmd(*args, timeout=10):
     try:
         r = subprocess.run(list(args), capture_output=True, text=True, timeout=timeout)
         return r.stdout.strip()
-    except Exception:
+    except (OSError, subprocess.SubprocessError):
         return "[]"
 
 def call_number(number):
     try:
         subprocess.run(['termux-telephony-call', number])
-    except Exception:
+    except OSError:
         pass
 
 def fetch_contacts():
     out = run_cmd('termux-contact-list', timeout=15)
     try:
         return json.loads(out)
-    except Exception:
+    except json.JSONDecodeError:
         return []
 
 def fetch_call_log(limit=20, offset=0):
@@ -24,7 +27,7 @@ def fetch_call_log(limit=20, offset=0):
     try:
         logs = json.loads(out)
         return list(reversed(logs))
-    except Exception:
+    except json.JSONDecodeError:
         return []
 
 def type_icon(t):

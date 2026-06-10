@@ -9,10 +9,17 @@ from textual import work
 from textual.command import Provider, Hit, Hits, DiscoveryHit
 from functools import partial
 from rich.text import Text
-import subprocess, os, re, time, json
+import json
+import subprocess
 from datetime import datetime
-from utils.constants import SPLASH, BASIC_COMMANDS, TOOLS, CAT_STYLE, SYSTEM_CMDS, CSS_SPLASH_SCREEN, CSS_MAIN, setup_font, restore_font
-from utils.helpers import strip_ansi, get_recent_programs, get_battery, get_memory, run_speedtest, fmt_speed, flatten_json, fmt_size, load_config, save_config
+from utils.constants import (
+    SPLASH, TOOLS, CAT_STYLE, SYSTEM_CMDS, CSS_SPLASH_SCREEN, CSS_MAIN,
+    setup_font, restore_font
+)
+from utils.helpers import (
+    strip_ansi, get_recent_programs, get_battery, get_memory,
+    run_speedtest, flatten_json, load_config, save_config
+)
 from utils.apps.dialer import DialerScreen
 from utils.apps.file_manager import FileBrowserScreen
 from utils.apps.music_player import MusicPlayerScreen
@@ -22,41 +29,38 @@ from utils.apps.orion import OrionLaunchScreen
 from utils.apps.browser import BrowserScreen
 
 
-# Loading Config
 config = load_config()
-    
-    
-# SPLASH SCREEN
+
 class SplashScreen(Screen):
     CSS = CSS_SPLASH_SCREEN
 
     def compose(self) -> ComposeResult:
         yield Static(SPLASH,  id="splash-art")
-        yield Static("[ PRESS ANY KEY TO SKIP ]", id="splash-sub")
 
     def on_mount(self):
-        self._diagnosis_done = False
         self.run_diagnosis()
 
-# IMPORTANT: Please do not enable this. Because that will skip the diagnosis
-#    def on_key(self):
-#        self.dismiss()
-        
-    def on_key(self, event) -> None:
-        if self._diagnosis_done:
-            self.dismiss()
+    def _run_check(self, cmd, *args, input_text=None, timeout=10):
+        try:
+            subprocess.run(
+                [cmd, *args],
+                input=input_text,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+        except (OSError, subprocess.SubprocessError):
+            pass
         
     @work(thread=True)
     def run_diagnosis(self):
-        subprocess.run("yes|termux-setup-storage", shell=True, capture_output=True)
-        subprocess.run("termux-call-log",          shell=True, capture_output=True)
-        subprocess.run("termux-contact-list",      shell=True, capture_output=True)
-        subprocess.run("termux-telephony-cellinfo",shell=True, capture_output=True)
-        self._diagnosis_done = True
-        self.app.call_from_thread(self.dismiss)
+        self._run_check("termux-setup-storage", input_text="y\n", timeout=8)
+        self._run_check("termux-call-log", timeout=8)
+        self._run_check("termux-contact-list", timeout=8)
+        self._run_check("termux-telephony-cellinfo", timeout=8)
+        self.app.call_from_thread(self._close_once)
 
 
-# Theme colour
 class ThemeCommand(Provider):
     _themes = [
         ("Theme: Jarvis", "jarvis"),
@@ -86,7 +90,6 @@ class ThemeCommand(Provider):
 
 
 
-# MAIN APP
 class TermuxDashboard(App):
     COMMANDS = App.COMMANDS | {ThemeCommand}
     _tick_count   = 0
@@ -158,12 +161,11 @@ class TermuxDashboard(App):
                     yield Button("▶ YTmp3",         id="app-ytmp3",  classes="apps")
                     yield Button(" GitHub",       id="app-github",  classes="apps")
                     yield Button(" Browser", id="app-browser",  classes="apps")
-                    yield Button("󰧑 Orion AI", id="app-orion",  classes="apps")
+                    yield Button("󰧑 Orion", id="app-orion",  classes="apps")
                     
 
         yield Footer()
 
-    # MOUNT
     def on_mount(self):
         self.push_screen(SplashScreen())
         self.fetch_weather()
@@ -187,8 +189,6 @@ class TermuxDashboard(App):
     
         config["theme"] = key
         save_config(config)
-
-    # SYSINFO TICK
 
     @work(thread=True)
     def tick_sysinfo(self):
@@ -228,7 +228,6 @@ class TermuxDashboard(App):
                 self.call_from_thread(self.query_one("#sys-info-box").remove_class, "alert")
         
 
-    # WEATHER
     @work(thread=True)
     def fetch_weather(self):
         try:
@@ -237,12 +236,11 @@ class TermuxDashboard(App):
                 capture_output=True, text=True
             )
             weather = strip_ansi(r.stdout.strip())
-        except:
+        except (OSError, subprocess.SubprocessError):
             weather = "Weather unavailable"
         self.call_from_thread(self.query_one("#weather", Static).update, weather)
 
     
-    # BUTTON HANDLER
     def on_button_pressed(self, event: Button.Pressed):
         bid = str(event.button.id)
 
@@ -250,63 +248,79 @@ class TermuxDashboard(App):
             self.run_home_cmd(["pkg", "update", "-y"], " Running update...")
         elif bid == "install-btn":
             inp = self.query_one("#pkg-input", Input)
-            inp.display = True; inp.focus()
+            inp.display = True
+            inp.focus()
         elif "recent-btn" in event.button.classes:
             self.run_home_shell(str(event.button.label))
         elif bid.startswith("tool-"):
             tool = next((t for t in TOOLS if t['id'] == bid[5:]), None)
-            if tool: self.install_tool(tool)
+            if tool:
+                self.install_tool(tool)
         elif bid.startswith("syscmd-"):
             cfg = next((c for c in SYSTEM_CMDS if c['id'] == bid[7:]), None)
-            if cfg: self.run_sys_cmd(cfg)
+            if cfg:
+                self.run_sys_cmd(cfg)
         elif bid == "app-music":
             self.push_screen(MusicPlayerScreen())
         elif bid == "app-files":
-            self.app.push_screen(FileBrowserScreen())
+            self.push_screen(FileBrowserScreen())
         elif bid == "app-dialer":
-            self.app.push_screen(DialerScreen())
+            self.push_screen(DialerScreen())
         elif bid == "app-ytmp3":
-            self.app.push_screen(YTmp3Screen())
+            self.push_screen(YTmp3Screen())
         elif bid == "app-github":
-            self.app.push_screen(RepoExploreScreen())
+            self.push_screen(RepoExploreScreen())
         elif bid == "app-browser":
-            self.app.push_screen(BrowserScreen())
-# ORION TEST 
+            self.push_screen(BrowserScreen())
         elif bid == "app-orion":
-            self.app.push_screen(OrionLaunchScreen())
+            self.push_screen(OrionLaunchScreen())
 
 
-    # INPUT HANDLER
     def on_input_submitted(self, event: Input.Submitted):
         val = event.value.strip()
-        if not val: return
+        if not val:
+            return
 
         if event.input.id == "pkg-input":
             self.run_home_cmd(["pkg", "install", val, "-y"], f"⬇ Installing {val}...")
-            event.input.clear(); event.input.display = False
+            event.input.clear()
+            event.input.display = False
 
         elif event.input.id == "cmd-input":
-            self.run_home_shell(val); event.input.clear()
+            self.run_home_shell(val)
+            event.input.clear()
 
         
-    # WORKERS
     @work(thread=True)
     def run_home_cmd(self, cmd, msg):
         log = self.query_one("#log-view", Log)
         self.call_from_thread(log.write_line, msg)
-        r = subprocess.run(cmd, capture_output=True, text=True)
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True)
+        except (OSError, subprocess.SubprocessError) as exc:
+            self.call_from_thread(log.write_line, f"✗ {exc}")
+            return
         for line in (r.stdout + r.stderr).splitlines():
             self.call_from_thread(log.write_line, line)
-        self.call_from_thread(log.write_line, " Done!")
+        if r.returncode == 0:
+            self.call_from_thread(log.write_line, " Done!")
+        else:
+            self.call_from_thread(log.write_line, f"✗ Exit code {r.returncode}")
 
     @work(thread=True)
     def run_home_shell(self, cmd):
         log = self.query_one("#log-view", Log)
         self.call_from_thread(log.write_line, f"$ {cmd}")
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        try:
+            r = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        except (OSError, subprocess.SubprocessError) as exc:
+            self.call_from_thread(log.write_line, f"✗ {exc}")
+            return
         out = r.stdout + r.stderr
         for line in (out.splitlines() if out.strip() else ["(no output)"]):
             self.call_from_thread(log.write_line, line)
+        if r.returncode != 0:
+            self.call_from_thread(log.write_line, f"✗ Exit code {r.returncode}")
 
     @work(thread=True)
     def install_tool(self, tool):
@@ -318,9 +332,16 @@ class TermuxDashboard(App):
         w("─" * 36, "dim #1a1a3e")
         for i, step in enumerate(tool['steps']):
             w(f"\n[{i+1}/{len(tool['steps'])}] $ {step}", "bold yellow")
-            r = subprocess.run(step, shell=True, capture_output=True, text=True)
+            try:
+                r = subprocess.run(step, shell=True, capture_output=True, text=True)
+            except (OSError, subprocess.SubprocessError) as exc:
+                w(f"  ✗ {exc}", "bold red")
+                return
             for line in (r.stdout + r.stderr).strip().splitlines():
                 w(f"  {line}", "dim green")
+            if r.returncode != 0:
+                w(f"  ✗ Step failed with exit code {r.returncode}", "bold red")
+                return
         w("\n" + "─" * 36, "dim #1a1a3e")
         w(f"  {tool['name']} installed!", "bold green")
 
@@ -346,7 +367,6 @@ class TermuxDashboard(App):
         w_header(cfg['name'])
         self.call_from_thread(rlog.write, Text("─" * 40, "dim #1a1a3e"))
 
-        # special: speedtest
         if cfg.get('special') == 'speedtest':
             w_raw("󱦟 Running speedtest, please wait (~30s)...")
             result = run_speedtest()
@@ -377,16 +397,26 @@ class TermuxDashboard(App):
                         else:
                             w_kv(key, val)
                 except json.JSONDecodeError:
-                    for line in out.splitlines(): w_raw(line)
+                    for line in out.splitlines():
+                        w_raw(line)
             else:
-                for line in out.splitlines(): w_raw(line)
+                for line in out.splitlines():
+                    w_raw(line)
         except subprocess.TimeoutExpired:
             w_raw(f"⏱ Timed out after {cfg.get('timeout', 15)}s — command may need more permissions or is unavailable")
         except Exception as e:
             w_raw(f"✗ {e}")
 
 
-app = TermuxDashboard()
-setup_font()
-app.run()
-restore_font()
+def main():
+    font_ready = setup_font()
+    app = TermuxDashboard()
+    try:
+        app.run()
+    finally:
+        if font_ready:
+            restore_font()
+
+
+if __name__ == "__main__":
+    main()

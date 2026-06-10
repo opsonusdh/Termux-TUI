@@ -60,8 +60,6 @@ class BrowserScreen(Screen):
         except Exception:
             pass
 
-    #  helpers 
-
     def _update_status(self):
         if self._active_cmd:
             self.query_one("#br-status", Static).update(
@@ -73,11 +71,6 @@ class BrowserScreen(Screen):
         else:
             self.query_one("#br-status", Static).update(
                 "No text browser found"
-            )
-            # Show install hints for all
-            hints = "  |  ".join(
-                f"{name}: pkg install {cmd}"
-                for cmd, name, _ in BROWSERS[:3]
             )
             self.query_one("#br-install-hint", Static).update(
                 f"Install one: {BROWSERS[0][2]}"
@@ -121,31 +114,26 @@ class BrowserScreen(Screen):
         url = self._normalize_url(url)
         cmd = self._active_cmd
 
-        # Build the shell command per-browser
         if url:
             if cmd == "browsh":
-                shell_cmd = f"browsh --startup-url {url}"
-            elif cmd in ("w3m",):
-                shell_cmd = f"w3m {url}"
-            elif cmd == "lynx":
-                shell_cmd = f"lynx {url}"
-            elif cmd in ("links", "elinks"):
-                shell_cmd = f"{cmd} {url}"
+                command = ["browsh", "--startup-url", url]
             else:
-                shell_cmd = f"{cmd} {url}"
+                command = [cmd, url]
         else:
-            shell_cmd = cmd
+            command = [cmd]
 
         self.query_one("#br-status", Static).update(
             f"Launching {self._active_name}..."
         )
-        with self.app.suspend():
-            subprocess.run(shell_cmd, shell=True)
+        try:
+            with self.app.suspend():
+                subprocess.run(command)
+        except OSError as exc:
+            self.query_one("#br-status", Static).update(f"Launch failed: {exc}")
+            return
         self.query_one("#br-status", Static).update(
             f"◈ Returned from {self._active_name}"
         )
-
-    #  events 
 
     def on_button_pressed(self, event: Button.Pressed):
         bid = str(event.button.id)
@@ -160,5 +148,3 @@ class BrowserScreen(Screen):
     def on_input_submitted(self, event: Input.Submitted):
         if event.input.id == "br-url":
             self._launch(event.value.strip())
-
-
