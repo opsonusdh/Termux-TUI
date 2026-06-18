@@ -58,7 +58,7 @@ class SplashScreen(Screen):
         self._run_check("termux-call-log", timeout=8)
         self._run_check("termux-contact-list", timeout=8)
         self._run_check("termux-telephony-cellinfo", timeout=8)
-        self.app.call_from_thread(self._close_once)
+        self.app.call_from_thread(self.app.pop_screen)
 
 
 class ThemeCommand(Provider):
